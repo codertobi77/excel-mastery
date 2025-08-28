@@ -52,7 +52,7 @@ export default function Markdown({ content }: { content: string }) {
           ),
           
           // Code inline avec meilleur style
-          code({ inline, className, children, ...props }) {
+          code({ inline, className, children, ...props }: any) {
             const text = String(children || "").replace(/\n$/, "")
             if (inline) {
               return (

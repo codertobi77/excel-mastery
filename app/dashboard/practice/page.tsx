@@ -3,6 +3,7 @@ import { useState } from "react"
 import { MessageSkeleton } from "@/components/placeholders"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import MiniExcelGrid from "@/components/mini-excel/Grid"
 
 export default function PracticePage() {
   const [skill, setSkill] = useState("")
@@ -34,24 +35,11 @@ export default function PracticePage() {
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Exercices</h2>
-      <div className="mb-6 p-4 border rounded-md space-y-3">
-        <div className="flex gap-2">
-          <input className="flex-1 border rounded px-3 py-2" placeholder="Compétence (ex: RECHERCHEV, Index/Match)" value={skill} onChange={(e) => setSkill(e.target.value)} />
-          <button className="px-4 py-2 rounded bg-primary text-white flex items-center gap-2 disabled:opacity-50" onClick={generateExercise} disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? "Génération..." : "Générer un exercice"}
-          </button>
-        </div>
-        {loading && (
-          <div className="p-3">
-            <MessageSkeleton />
-          </div>
-        )}
-        {!loading && exercise && (
-          <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded">{exercise}</pre>
-        )}
+    <div>        
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Feuille de calcul</h3>
+        <MiniExcelGrid />
+        <p className="text-xs text-muted-foreground">Astuce: Essayez des formules comme =SUM(A1:B2), =AVERAGE(A1:A5)</p>
       </div>
     </div>
   )

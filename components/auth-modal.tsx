@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { useAuth } from "../context/auth-context";
 import { SignInButton } from "@clerk/nextjs";
 import { FcGoogle } from "react-icons/fc";
 import {
@@ -37,7 +36,6 @@ export function AuthModal() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { login } = useAuth();
 
   const toggleAuthMode = () => setIsLogin(!isLogin);
 
@@ -146,9 +144,6 @@ export function AuthModal() {
             ? "Connexion réussie"
             : "Inscription réussie",
         });
-        if (data.token) {
-          login(data.token); // Pass only the token to login
-        }
         setIsOpen(false);
       } else {
         throw new Error(data.message || "Erreur d'authentification");

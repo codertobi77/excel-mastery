@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     await resend.emails.send({
       from: 'no-reply@resend.dev',
       to: ADMIN_EMAIL,
-      reply_to: email,
+      replyTo: email,
       subject,
       html,
     })

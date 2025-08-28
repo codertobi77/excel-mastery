@@ -8,12 +8,12 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0
 
-export const CONVERSATIONS_TAG = 'conversations'
+const CONVERSATIONS_TAG = 'conversations'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function GET() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json([], { status: 200 })
   const list = await convex.query((api as any).conversations.listByClerk, { clerkId: userId }).catch(() => [])
   return NextResponse.json(list, { status: 200, headers: { 'Cache-Tag': CONVERSATIONS_TAG } })

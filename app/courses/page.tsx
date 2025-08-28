@@ -26,8 +26,8 @@ export default function CoursesPage() {
           Des formations personnalisées pour tous les niveaux, de débutant à expert.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-8">
-          {courses && courses.length > 0 ? (
-            courses.map(course => (
+          {(courses?.length ?? 0) > 0 ? (
+            (courses ?? []).map(course => (
               <Card key={course._id} title={course.title} description={course.description} />
             ))
           ) : (

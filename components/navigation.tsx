@@ -49,7 +49,6 @@ export function Navigation() {
             <UserButton
               afterSignOutUrl="/"
               userProfileMode="modal"
-              signOutMode="modal"
               appearance={{
                 elements: {
                   userButtonBox: "rounded-md border border-border bg-background hover:bg-muted/70 transition-colors",

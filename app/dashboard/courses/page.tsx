@@ -9,15 +9,19 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useUser, useAuth } from "@clerk/nextjs";
+import { Progress } from "@/components/ui/progress";
+import Markdown from "@/components/markdown";
 
 export default function DashboardCoursesPage() {
-  const courses = useQuery((api as any).courses.list);
   const { user } = useUser();
-  const { getToken } = useAuth();
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";
   const userDoc = useQuery((api as any).users.getByEmail, userEmail ? { email: userEmail } : undefined);
+  const courses = useQuery((api as any).courses.listWithProgress, userDoc?._id ? { userId: userDoc._id } : "skip");
+  const { getToken } = useAuth();
   const progress = useQuery((api as any).userProgress.getByUser, userDoc?._id ? { userId: userDoc._id } : "skip");
   const upsertLevel = useMutation((api as any).userProgress.upsertLevel);
+  const toggleLesson = useMutation((api as any).userProgress.toggleLesson);
+  const savePlacementResult = useMutation((api as any).userProgress.savePlacementResult);
 
   const [topic, setTopic] = useState("");
   const [draft, setDraft] = useState("");
@@ -26,12 +30,18 @@ export default function DashboardCoursesPage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [selectingLevel, setSelectingLevel] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [mustTakeTest, setMustTakeTest] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const [resultsSummary, setResultsSummary] = useState<string>("");
   const [testQuestions, setTestQuestions] = useState<any[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const [testLoading, setTestLoading] = useState(false);
   const [wrongAnswers, setWrongAnswers] = useState<string[]>([]);
   const hasProgress = useMemo(() => !!progress?._id, [progress]);
+
+  const [resumeOpen, setResumeOpen] = useState(false);
+  const [resumeCourse, setResumeCourse] = useState<any | null>(null);
 
   useEffect(() => {
     if (userDoc?._id === undefined) return;
@@ -105,6 +115,7 @@ export default function DashboardCoursesPage() {
                   if (selectingLevel === "BEGINNER") {
                     // Generate two beginner courses quickly
                     const token = await getToken();
+                    console.log("Token for course generation:", token ? "Present" : "Missing");
                     await Promise.all([
                       fetch("/api/content", {
                         method: "POST",
@@ -129,19 +140,20 @@ export default function DashboardCoursesPage() {
                   } else {
                     // Start AI-generated placement test flow
                     setOnboardingOpen(false);
+                    setMustTakeTest(true);
                     setTestLoading(true);
                     try {
                       const res = await fetch("/api/ai", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          system: `Tu es un expert Excel qui crée des tests de positionnement. Génère un test de 5 questions pour le niveau ${selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé"}. Chaque question doit avoir 4 options (A, B, C, D) avec une seule bonne réponse.`,
+                          system: `Tu es un expert Excel qui crée des tests de positionnement. Génère un test de 10 questions pour le niveau ${selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé"}. Chaque question doit avoir 4 options (A, B, C, D) avec une seule bonne réponse.`,
                           messages: [{ 
                             role: "user", 
-                            content: `Crée un test de positionnement Excel niveau ${selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé"} avec exactement 5 questions. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ou après. Format exact: [{"question": "Question texte", "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"], "correctAnswer": "A", "explanation": "Explication de la réponse"}]` 
+                            content: 'Crée un test de positionnement Excel niveau ' + (selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé") + ' avec exactement 10 questions. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte autour. Format exact: [{"question": "Question texte", "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"], "correctAnswer": "A", "explanation": "Explication de la réponse"}]' 
                           }],
                           temperature: 0.3,
-                          max_tokens: 1500
+                          max_tokens: 2000
                         })
                       });
                       const data = await res.json();
@@ -191,7 +203,7 @@ export default function DashboardCoursesPage() {
       </Dialog>
 
       {/* Placement Test Modal */}
-      <Dialog open={testOpen} onOpenChange={setTestOpen}>
+      <Dialog open={testOpen || mustTakeTest} onOpenChange={(v) => { setTestOpen(v); if (!v) setMustTakeTest(false); }}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Test de positionnement - Niveau {selectingLevel === "INTERMEDIATE" ? "Intermédiaire" : "Avancé"}</DialogTitle>
@@ -246,14 +258,33 @@ export default function DashboardCoursesPage() {
                 <Button
                   onClick={async () => {
                     // Calculate wrong answers and generate courses
-                    const wrong = testQuestions
-                      .map((q, i) => ({ question: q.question, userAnswer: userAnswers[i], correctAnswer: q.correctAnswer, explanation: q.explanation }))
-                      .filter((q, i) => userAnswers[i] !== q.correctAnswer)
-                      .map(q => q.question);
+                    const analysis = testQuestions.map((q, i) => ({ question: q.question, userAnswer: userAnswers[i], correctAnswer: q.correctAnswer, explanation: q.explanation }))
+                    const wrong = analysis.filter((q, i) => userAnswers[i] !== q.correctAnswer).map(q => q.question)
                     
                     setWrongAnswers(wrong);
                     setTestOpen(false);
+                    setMustTakeTest(false);
                     
+                    // Ask AI for results synthesis and level confirmation
+                    try {
+                      const res = await fetch('/api/ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          system: 'Tu es un pédagogue Excel. Analyse un test de 10 questions pour confirmer ou infirmer le niveau et proposer des axes de progression. Réponds en 4-6 phrases claires.',
+                          messages: [{ role: 'user', content: `Questions et réponses: ${JSON.stringify(analysis)}` }],
+                          temperature: 0.3,
+                          max_tokens: 400
+                        })
+                      })
+                      const data = await res.json()
+                      setResultsSummary(data?.content || '')
+                      if (userDoc?._id) {
+                        await savePlacementResult({ userId: userDoc._id, level: selectingLevel!, analysis: data?.content || '', answersJson: JSON.stringify(analysis) })
+                      }
+                      setResultsOpen(true)
+                    } catch {}
+
                     if (wrong.length > 0) {
                       toast.message("Génération des cours", { description: `Création de ${wrong.length} cours basés sur vos erreurs...` });
                       
@@ -288,6 +319,26 @@ export default function DashboardCoursesPage() {
                 </Button>
               )}
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Results Modal */}
+      <Dialog open={resultsOpen} onOpenChange={setResultsOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Résultats du test</DialogTitle>
+            <DialogDescription>Analyse et confirmation de niveau</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border border-border bg-muted/40 p-4">
+            {resultsSummary ? (
+              <Markdown content={resultsSummary} />
+            ) : (
+              <p className="text-sm text-muted-foreground">Analyse indisponible</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setResultsOpen(false)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -336,13 +387,81 @@ export default function DashboardCoursesPage() {
       </div>
       {courses ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {courses.map((c: any) => (
-            <Card key={c._id} title={c.title} description={c.description} />
+          {courses.map((cp: any) => (
+            <div key={cp.course._id} className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-lg">{cp.course.title}</h3>
+                {cp.percentage === 100 ? (
+                  <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">Badge: Terminé</span>
+                ) : cp.percentage >= 50 ? (
+                  <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Badge: En progrès</span>
+                ) : (
+                  <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded">Badge: À commencer</span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">{cp.course.description}</p>
+              <div className="mb-2 text-sm">{cp.completedLessons}/{cp.totalLessons} leçons</div>
+              <Progress value={cp.percentage} />
+              <div className="mt-3 flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setResumeCourse(cp);
+                    setResumeOpen(true);
+                  }}
+                >
+                  {cp.percentage === 0 ? 'Commencer' : 'Reprendre'}
+                </Button>
+                <Button variant="secondary" asChild>
+                  <a href={`/dashboard/courses/${cp.course._id}`}>Détails</a>
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
         <CardGridSkeleton />
       )}
+
+      {/* Resume Modal */}
+      <Dialog open={resumeOpen} onOpenChange={setResumeOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {resumeCourse?.percentage === 0 ? 'Commencer le cours' : 'Reprendre le cours'} - {resumeCourse?.course.title}
+            </DialogTitle>
+            <DialogDescription>
+              {resumeCourse?.nextLesson ? `Prochaine leçon: ${resumeCourse.nextLesson.title}` : 'Cours terminé'}
+            </DialogDescription>
+          </DialogHeader>
+          {resumeCourse?.nextLesson && (
+            <div className="space-y-3">
+              <div className="prose dark:prose-invert">
+                <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded border">{resumeCourse.nextLesson.content}</pre>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {resumeCourse?.nextLesson ? (
+              <Button
+                onClick={async () => {
+                  try {
+                    await toggleLesson({ userId: userDoc._id, lessonId: resumeCourse.nextLesson._id, completed: true });
+                    toast.success('Leçon marquée comme terminée');
+                    setResumeOpen(false);
+                  } catch (e) {
+                    toast.error("Impossible de marquer la leçon");
+                  }
+                }}
+              >
+                Marquer comme terminée
+              </Button>
+            ) : (
+              <Button onClick={() => setResumeOpen(false)}>Fermer</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

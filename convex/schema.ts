@@ -116,6 +116,36 @@ export default defineSchema({
     content: v.string(),
     createdAt: v.number(),
   }).index("by_conversation", ["conversationId", "createdAt"]),
+
+  placementTests: defineTable({
+    userId: v.id("users"),
+    level: v.string(), // INTERMEDIATE | ADVANCED
+    questionsJson: v.string(),
+    createdAt: v.number(),
+  }).index("by_user_level", ["userId", "level"]),
+
+  courseSnapshots: defineTable({
+    userId: v.id("users"),
+    topic: v.string(),
+    dataJson: v.string(),
+    createdAt: v.number(),
+  }).index("by_user_topic", ["userId", "topic"]),
+
+  placementResults: defineTable({
+    userId: v.id("users"),
+    level: v.string(),
+    analysis: v.string(),
+    answersJson: v.string(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  practiceSheets: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    dataJson: v.string(),
+    metaJson: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]).index("by_user_name", ["userId", "name"]),
 });
 
 

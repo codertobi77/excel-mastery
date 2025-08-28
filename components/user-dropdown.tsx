@@ -1,41 +1,29 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { useAuth } from "../context/auth-context";
+import { UserButton, SignedIn } from "@clerk/nextjs";
 
 export function UserDropdown() {
-  const { user, logout } = useAuth();
-
-  if (!user) return null;
-
-  const initials = `${user.prenom[0]}${user.nom[0]}`.toUpperCase();
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="" alt={user.email} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuItem className="flex flex-col items-start">
-          <div className="text-sm font-medium">{user.prenom} {user.nom}</div>
-          <div className="text-xs text-muted-foreground">{user.email}</div>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={logout} className="text-red-600">
-          Déconnexion
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <SignedIn>
+      <UserButton
+        afterSignOutUrl="/"
+        userProfileMode="modal"
+        appearance={{
+          elements: {
+            userButtonBox: "rounded-md border border-border bg-background hover:bg-muted/70 transition-colors",
+            userButtonTrigger: "ring-0 focus:outline-none",
+            userButtonAvatarBox: "h-8 w-8",
+            userButtonPopoverCard: "rounded-lg border border-border shadow-xl bg-background",
+            userButtonPopoverHeader: "p-3",
+            userPreviewMainIdentifier: "text-foreground font-medium",
+            userPreviewSecondaryIdentifier: "text-muted-foreground",
+            userButtonPopoverActions: "p-2 space-y-1",
+            userButtonPopoverActionButton: "text-sm rounded-md hover:bg-muted/80 text-foreground",
+            userButtonPopoverActionButtonIcon: "text-muted-foreground",
+            userButtonPopoverFooter: "p-2 border-t border-border",
+          },
+        }}
+      />
+    </SignedIn>
   );
 }

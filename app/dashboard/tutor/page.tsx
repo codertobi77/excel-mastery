@@ -85,7 +85,7 @@ export default function TutorPage() {
         currentId = await createConversation({ userId: userDoc._id, title: initialTitle })
         setConversationId(currentId)
         setIsNewConversation(false)
-        setLastConversationId(currentId)
+        setLastConversationId(currentId || undefined)
         // Invalidate conversations cache tag (Next revalidateTag)
         fetch('/api/conversations', { method: 'POST' }).catch(() => {})
 
@@ -550,6 +550,14 @@ export default function TutorPage() {
 
 function Messages({ conversationId, onFillInput }: { conversationId: string; onFillInput: (question: string) => void }) {
   const messages = useQuery((api as any).messages.byConversation, { conversationId })
+  const addMessage = useMutation((api as any).messages.add)
+  const updateMessage = useMutation((api as any).messages.update)
+  const removeMessage = useMutation((api as any).messages.remove)
+  const removeMessageAfter = useMutation((api as any).messages.removeAfter)
+
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState<string>("")
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
   
   if (!messages) {
     return <MessageSkeleton />
@@ -635,22 +643,161 @@ function Messages({ conversationId, onFillInput }: { conversationId: string; onF
                 : 'bg-muted border border-border'
             }`}>
               {m.role === 'user' ? (
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">Vous</span>
+                <div>
+                  {editingMessageId === m._id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        className="min-h-[100px] bg-background text-foreground"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingMessageId(null)
+                            setEditingValue("")
+                          }}
+                          className="text-xs px-2 py-1 rounded border border-border text-foreground hover:bg-muted/70 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const trimmed = editingValue.trim()
+                            if (!trimmed) return
+                            try {
+                              // Update the user message content
+                              await updateMessage({ id: m._id, content: trimmed })
+
+                              // If next message is an assistant reply, remove it
+                              const next = messages[index + 1]
+                              if (next && next.role === 'assistant') {
+                                await removeMessage({ id: next._id })
+                              }
+
+                              // Regenerate assistant reply using the conversation up to this point
+                              const historyUpTo = messages
+                                .slice(0, index) // messages before current
+                                .concat([{ ...m, content: trimmed }]) // the edited message as latest
+                                .map((mm: any) => ({ role: mm.role, content: mm.content }))
+
+                              const reply = await aiChat({
+                                system: "Tu es un tuteur d'Excel expert. Réponds avec:\n1) Explication brève\n2) Étapes numérotées\n3) Formule(s) Excel en blocs de code\n4) Pièges fréquents\n5) Exemple minimal.",
+                                messages: historyUpTo,
+                                temperature: 0.2,
+                                max_tokens: 800,
+                              })
+
+                              await addMessage({ conversationId, role: 'assistant', content: reply || "" })
+                              toast.success('Message mis à jour et réponse régénérée')
+                            } catch (e) {
+                              toast.error("Impossible de mettre à jour/regénérer la réponse")
+                            } finally {
+                              setEditingMessageId(null)
+                              setEditingValue("")
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                          Enregistrer & régénérer
+                        </button>
+      </div>
+    </div>
+                  ) : (
+                    <>
+                      <p>{m.content}</p>
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button
+                          onClick={() => onFillInput(m.content)}
+                          className="text-xs px-2 py-1 rounded border border-border text-foreground hover:bg-muted/70 transition-colors"
+                        >
+                          Modifier et réutiliser
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingMessageId(m._id)
+                            setEditingValue(m.content)
+                          }}
+                          className="text-xs px-2 py-1 rounded border border-border text-foreground hover:bg-muted/70 transition-colors"
+                        >
+                          Modifier sur place
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mb-2">
-                  <Bot className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-primary">Tuteur IA</span>
-      </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Bot className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Tuteur IA</span>
+                    </div>
+                    <button
+                      disabled={regeneratingId === m._id}
+                      onClick={async () => {
+                        try {
+                          setRegeneratingId(m._id)
+                          const historyUpTo = messages
+                            .slice(0, index) // all messages before this assistant reply
+                            .map((mm: any) => ({ role: mm.role, content: mm.content }))
+                          const reply = await aiChat({
+                            system: "Tu es un tuteur d'Excel expert. Réponds avec:\n1) Explication brève\n2) Étapes numérotées\n3) Formule(s) Excel en blocs de code\n4) Pièges fréquents\n5) Exemple minimal.",
+                            messages: historyUpTo,
+                            temperature: 0.2,
+                            max_tokens: 800,
+                          })
+                          await updateMessage({ id: m._id, content: reply || '' })
+                          toast.success('Réponse régénérée')
+                        } catch (e) {
+                          toast.error('Impossible de régénérer la réponse')
+                        } finally {
+                          setRegeneratingId(null)
+                        }
+                      }}
+                      className="text-xs px-2 py-1 rounded border border-border text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
+                    >
+                      {regeneratingId === m._id ? '…' : 'Régénérer'}
+                    </button>
+                    <button
+                      disabled={regeneratingId === m._id}
+                      onClick={async () => {
+                        try {
+                          setRegeneratingId(m._id)
+                          // Delete all messages after this assistant message
+                          await removeMessageAfter({ conversationId, cutoffCreatedAt: m.createdAt })
+
+                          // Build history up to the previous user message (before this assistant)
+                          const historyUpTo = messages
+                            .filter((mm: any) => mm.createdAt <= m.createdAt)
+                            .slice(0, index) // everything before current assistant
+                            .map((mm: any) => ({ role: mm.role, content: mm.content }))
+
+                          // Generate new assistant reply and add it as a new message
+                          const reply = await aiChat({
+                            system: "Tu es un tuteur d'Excel expert. Réponds avec:\n1) Explication brève\n2) Étapes numérotées\n3) Formule(s) Excel en blocs de code\n4) Pièges fréquents\n5) Exemple minimal.",
+                            messages: historyUpTo,
+                            temperature: 0.2,
+                            max_tokens: 800,
+                          })
+
+                          await updateMessage({ id: m._id, content: reply || '' })
+                          toast.success('Réponse régénérée depuis ce point')
+                        } catch (e) {
+                          toast.error('Impossible de régénérer depuis ce point')
+                        } finally {
+                          setRegeneratingId(null)
+                        }
+                      }}
+                      className="ml-2 text-xs px-2 py-1 rounded border border-border text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
+                    >
+                      {regeneratingId === m._id ? '…' : 'Régénérer depuis ici'}
+                    </button>
+                  </div>
+                  <Markdown content={m.content} />
+                </div>
               )}
-              {m.role === 'user' ? (
-                <p>{m.content}</p>
-              ) : (
-                <Markdown content={m.content} />
-              )}
-    </div>
+            </div>
           </motion.div>
           {m.role === 'user' && (
             <motion.div
