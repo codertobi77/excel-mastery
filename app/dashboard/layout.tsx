@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useAppStore } from '@/store/app-store'
+import ProfileCompletionModal from '@/components/dashboard/ProfileCompletionModal'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname?.() || ''
@@ -175,8 +176,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </header>
             <main className="p-6">
-            {children}
-          </main>
+              {children}
+            </main>
+            <ProfileCompletionModal />
           <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>

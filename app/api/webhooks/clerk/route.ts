@@ -67,6 +67,22 @@ export async function POST(req: Request) {
         lastName,
         image,
       });
+
+      // Sync profile extras on user.updated if present on Clerk
+      if (evt.type === 'user.updated') {
+        const pm: any = user?.public_metadata || {}
+        const gender = typeof pm.gender === 'string' ? pm.gender : undefined
+        const age = typeof pm.age === 'number' ? pm.age : undefined
+        const nationality = typeof pm.nationality === 'string' ? pm.nationality : undefined
+        if (email && (gender || age || nationality)) {
+          await convex.mutation((api as any).users.updateProfileByEmail, {
+            email,
+            gender,
+            age,
+            nationality,
+          })
+        }
+      }
       // Best-effort: trigger client notifications through a tag revalidation or queue
       // For now, just log. In production, push to a notification channel.
       if (evt.type === 'user.created') {

@@ -47,3 +47,27 @@ export const upsertFromClerk = mutation({
 });
 
 
+export const updateProfileByEmail = mutation({
+  args: {
+    email: v.string(),
+    gender: v.optional(v.string()),
+    age: v.optional(v.number()),
+    nationality: v.optional(v.string()),
+  },
+  handler: async (ctx, { email, gender, age, nationality }) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", q => q.eq("email", email))
+      .unique();
+    if (!existing) return null;
+    const patch: any = { updatedAt: now };
+    if (typeof gender === 'string') patch.gender = gender;
+    if (typeof age === 'number') patch.age = age;
+    if (typeof nationality === 'string') patch.nationality = nationality;
+    await ctx.db.patch(existing._id, patch);
+    return existing._id;
+  },
+});
+
+
