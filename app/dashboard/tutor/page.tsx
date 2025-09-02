@@ -35,6 +35,7 @@ export default function TutorPage() {
   const { user } = useUser()
   const userEmail = user?.primaryEmailAddress?.emailAddress || ""
   const userDoc = useQuery((api as any).users.getByEmail, userEmail ? { email: userEmail } : undefined)
+  const upsertUser = useMutation((api as any).users.upsertFromClerk)
 
   const [conversationId, setConversationId] = useState<string | null>(null)
   const cachedLastConversationId = useAppStore((s) => s.lastConversationId)
@@ -57,11 +58,33 @@ export default function TutorPage() {
   const deleteConversation = useMutation((api as any).conversations.remove)
   const removeIfEmpty = useMutation((api as any).conversations.removeIfEmpty)
 
-  // Ensure an initial empty conversation exists on first open
+  // Ensure user exists in Convex and create initial conversation
   useEffect(() => {
-    if (!userDoc?._id) return
+    if (!user || !userEmail) return
     if (conversationId) return
+    
     const run = async () => {
+      let currentUserDoc = userDoc
+      
+      // If user doesn't exist in Convex, create them
+      if (!currentUserDoc && userEmail) {
+        try {
+          await upsertUser({
+            email: userEmail,
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            image: user.imageUrl || undefined,
+          })
+          // The userDoc will be updated by the query after this mutation
+          return // Let the effect re-run with the new userDoc
+        } catch (error) {
+          console.error("Failed to create user:", error)
+          return
+        }
+      }
+      
+      if (!currentUserDoc?._id) return
+      
       // Use last cached conversation if exists
       if (cachedLastConversationId) {
         setConversationId(cachedLastConversationId)
@@ -73,19 +96,21 @@ export default function TutorPage() {
         return
       }
       // Otherwise create an initial empty conversation titled "New Chat"
-      const newId = await createConversation({ userId: userDoc._id, title: "New Chat" })
+      const newId = await createConversation({ userId: currentUserDoc._id, title: "New Chat" })
       setConversationId(newId)
       setIsNewConversation(true)
       setLastConversationId(newId || undefined)
       fetch('/api/conversations', { method: 'POST' }).catch(() => {})
     }
     run()
-  }, [userDoc?._id, conversations, conversationId, cachedLastConversationId, createConversation, setLastConversationId])
+  }, [user, userEmail, userDoc, conversations, conversationId, cachedLastConversationId, createConversation, setLastConversationId, upsertUser])
 
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [streamingReply, setStreamingReply] = useState("")
   const [abortController, setAbortController] = useState<AbortController | null>(null)
+
+
 
   async function ask() {
     if (!input.trim() || !userDoc?._id) return
@@ -547,7 +572,7 @@ export default function TutorPage() {
                   disabled={loading || !input.trim() || !userDoc?._id}
                   size="icon"
                   className="h-[44px] w-[44px]"
-                  title={`Debug: loading=${loading}, input="${input.trim()}", userDoc._id=${userDoc?._id}`}
+
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </Button>
