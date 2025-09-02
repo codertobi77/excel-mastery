@@ -8,7 +8,15 @@ export default function ClerkAppearanceProvider({ children }: { children: React.
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
-  const appearance: any = useMemo(() => ({ baseTheme: isDark ? dark : undefined }), [isDark])
+  const appearance: any = useMemo(
+    () => ({
+      baseTheme: isDark ? dark : undefined,
+      variables: {
+        colorPrimary: 'hsl(var(--primary))',
+      },
+    }),
+    [isDark]
+  )
 
   return (
     <ClerkProvider appearance={appearance}>
