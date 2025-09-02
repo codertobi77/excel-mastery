@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { COUNTRIES } from '@/lib/countries'
 import { useUser } from '@clerk/nextjs'
 
 export default function ProfileCompletionModal() {
@@ -74,7 +75,16 @@ export default function ProfileCompletionModal() {
 
           <div className="space-y-2">
             <div className="text-sm font-medium">Nationalité</div>
-            <Input value={nationality} onChange={(e) => setNationality(e.target.value)} />
+            <Select value={nationality} onValueChange={setNationality}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un pays" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
