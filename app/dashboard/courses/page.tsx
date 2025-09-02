@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { Progress } from "@/components/ui/progress";
 import Markdown from "@/components/markdown";
+import { generatePlacementTest, correctPlacementTest, generateCourse } from "@/lib/ai-content";
 
 export default function DashboardCoursesPage() {
   const { user } = useUser();
@@ -35,9 +36,11 @@ export default function DashboardCoursesPage() {
   const [resultsSummary, setResultsSummary] = useState<string>("");
   const [testQuestions, setTestQuestions] = useState<any[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [testLoading, setTestLoading] = useState(false);
   const [wrongAnswers, setWrongAnswers] = useState<string[]>([]);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [courseGenerationLoading, setCourseGenerationLoading] = useState(false);
   const hasProgress = useMemo(() => !!progress?._id, [progress]);
 
   const [resumeOpen, setResumeOpen] = useState(false);
@@ -79,6 +82,12 @@ export default function DashboardCoursesPage() {
         <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Génération du test de positionnement...</span>
+        </div>
+      )}
+      {courseGenerationLoading && (
+        <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Correction du test et génération du cours personnalisé...</span>
         </div>
       )}
       <Dialog open={onboardingOpen} onOpenChange={setOnboardingOpen}>
@@ -143,50 +152,17 @@ export default function DashboardCoursesPage() {
                     setMustTakeTest(true);
                     setTestLoading(true);
                     try {
-                      const res = await fetch("/api/ai", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          system: `Tu es un expert Excel qui crée des tests de positionnement. Génère un test de 10 questions pour le niveau ${selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé"}. Chaque question doit avoir 4 options (A, B, C, D) avec une seule bonne réponse.`,
-                          messages: [{ 
-                            role: "user", 
-                            content: 'Crée un test de positionnement Excel niveau ' + (selectingLevel === "INTERMEDIATE" ? "intermédiaire" : "avancé") + ' avec exactement 10 questions. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte autour. Format exact: [{"question": "Question texte", "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"], "correctAnswer": "A", "explanation": "Explication de la réponse"}]' 
-                          }],
-                          temperature: 0.3,
-                          max_tokens: 2000
-                        })
-                      });
-                      const data = await res.json();
-                      if (data.content) {
-                        try {
-                          // Try to extract JSON from the response (AI might add extra text)
-                          let jsonContent = data.content;
-                          
-                          // Find JSON array in the response
-                          const jsonMatch = jsonContent.match(/\[[\s\S]*\]/);
-                          if (jsonMatch) {
-                            jsonContent = jsonMatch[0];
-                          }
-                          
-                          const questions = JSON.parse(jsonContent);
-                          
-                          // Validate the structure
-                          if (Array.isArray(questions) && questions.length > 0) {
-                            setTestQuestions(questions);
-                            setTestOpen(true);
-                          } else {
-                            throw new Error("Invalid questions format");
-                          }
-                        } catch (e) {
-                          console.error("Test parsing error:", e);
-                          console.error("AI response:", data.content);
-                          toast.error("Erreur lors du parsing du test. Réessayez.");
-                        }
+                      const testData = await generatePlacementTest(selectingLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED");
+                      if (testData.questions && testData.questions.length === 10) {
+                        setTestQuestions(testData.questions);
+                        setTestOpen(true);
+                        toast.success("Test de positionnement généré avec succès");
                       } else {
-                        toast.error("Réponse vide de l'IA");
+                        throw new Error("Test invalide généré");
                       }
                     } catch (e) {
-                      toast.error("Impossible de générer le test");
+                      console.error("Test generation error:", e);
+                      toast.error("Impossible de générer le test. Réessayez.");
                     } finally {
                       setTestLoading(false);
                     }
@@ -222,11 +198,11 @@ export default function DashboardCoursesPage() {
                 {testQuestions[currentQuestionIndex].options.map((option: string, index: number) => (
                   <Button
                     key={index}
-                    variant={userAnswers[currentQuestionIndex] === option.split('.')[0] ? "default" : "outline"}
+                    variant={userAnswers[currentQuestionIndex] === index ? "default" : "outline"}
                     className="w-full justify-start text-left h-auto p-3"
                     onClick={() => {
                       const newAnswers = [...userAnswers];
-                      newAnswers[currentQuestionIndex] = option.split('.')[0];
+                      newAnswers[currentQuestionIndex] = index;
                       setUserAnswers(newAnswers);
                     }}
                   >
@@ -257,60 +233,77 @@ export default function DashboardCoursesPage() {
               ) : (
                 <Button
                   onClick={async () => {
-                    // Calculate wrong answers and generate courses
-                    const analysis = testQuestions.map((q, i) => ({ question: q.question, userAnswer: userAnswers[i], correctAnswer: q.correctAnswer, explanation: q.explanation }))
-                    const wrong = analysis.filter((q, i) => userAnswers[i] !== q.correctAnswer).map(q => q.question)
-                    
-                    setWrongAnswers(wrong);
                     setTestOpen(false);
                     setMustTakeTest(false);
+                    setCourseGenerationLoading(true);
                     
-                    // Ask AI for results synthesis and level confirmation
                     try {
-                      const res = await fetch('/api/ai', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          system: 'Tu es un pédagogue Excel. Analyse un test de 10 questions pour confirmer ou infirmer le niveau et proposer des axes de progression. Réponds en 4-6 phrases claires.',
-                          messages: [{ role: 'user', content: `Questions et réponses: ${JSON.stringify(analysis)}` }],
-                          temperature: 0.3,
-                          max_tokens: 400
-                        })
-                      })
-                      const data = await res.json()
-                      setResultsSummary(data?.content || '')
-                      if (userDoc?._id) {
-                        await savePlacementResult({ userId: userDoc._id, level: selectingLevel!, analysis: data?.content || '', answersJson: JSON.stringify(analysis) })
-                      }
-                      setResultsOpen(true)
-                    } catch {}
-
-                    if (wrong.length > 0) {
-                      toast.message("Génération des cours", { description: `Création de ${wrong.length} cours basés sur vos erreurs...` });
+                      // Correct the test using our new function
+                      const correctionResult = await correctPlacementTest(
+                        selectingLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
+                        testQuestions,
+                        userAnswers
+                      );
                       
-                      // Generate courses based on wrong answers
-                      try {
-                        const token = await getToken();
-                        await Promise.all(
-                          wrong.slice(0, 3).map(async (question) => {
-                            const topic = question.split(' ').slice(0, 5).join(' '); // Extract key words
-                            await fetch("/api/content", {
-                              method: "POST",
-                              headers: { 
-                                "Content-Type": "application/json",
-                                "Authorization": `Bearer ${token}`
-                              },
-                              body: JSON.stringify({ type: "course", topic }),
-                            });
-                          })
-                        );
-                        fetch('/api/courses', { method: 'POST' }).catch(() => {});
-                        toast.success(`${Math.min(wrong.length, 3)} cours personnalisés ont été générés`);
-                      } catch (e) {
-                        toast.error("Erreur lors de la génération des cours");
+                      setTestResult(correctionResult);
+                      
+                      // Generate summary for display
+                      const summary = `Score: ${correctionResult.score}/10\nRésultat: ${correctionResult.result === "SUCCESS" ? "Réussi" : "Échec"}\n\nAnalyse détaillée:\n${correctionResult.review.map((r, i) => `Question ${i + 1}: ${r.isCorrect ? "✓" : "✗"} - ${r.analysis}`).join('\n\n')}`;
+                      setResultsSummary(summary);
+                      
+                      // Save results to database
+                      if (userDoc?._id) {
+                        await savePlacementResult({ 
+                          userId: userDoc._id, 
+                          level: selectingLevel!, 
+                          analysis: summary, 
+                          answersJson: JSON.stringify(correctionResult.review) 
+                        });
                       }
-                    } else {
-                      toast.success("Excellent ! Vous maîtrisez déjà ce niveau");
+                      
+                      setResultsOpen(true);
+                      
+                      // Generate personalized course based on test results
+                      if (correctionResult.result === "FAIL" || correctionResult.score < 7) {
+                        toast.message("Génération du cours personnalisé", { 
+                          description: "Création d'un parcours adapté à votre niveau réel..." 
+                        });
+                        
+                        try {
+                          const course = await generateCourse(
+                            selectingLevel as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
+                            correctionResult
+                          );
+                          
+                          // Save the generated course to database
+                          const token = await getToken();
+                          await fetch("/api/content", {
+                            method: "POST",
+                            headers: { 
+                              "Content-Type": "application/json",
+                              "Authorization": `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ 
+                              type: "course", 
+                              topic: course.title,
+                              courseData: course
+                            }),
+                          });
+                          
+                          fetch('/api/courses', { method: 'POST' }).catch(() => {});
+                          toast.success("Cours personnalisé généré avec succès !");
+                        } catch (e) {
+                          console.error("Course generation error:", e);
+                          toast.error("Erreur lors de la génération du cours personnalisé");
+                        }
+                      } else {
+                        toast.success("Excellent ! Vous maîtrisez déjà ce niveau");
+                      }
+                    } catch (e) {
+                      console.error("Test correction error:", e);
+                      toast.error("Erreur lors de la correction du test");
+                    } finally {
+                      setCourseGenerationLoading(false);
                     }
                   }}
                   disabled={!userAnswers[currentQuestionIndex]}
@@ -325,18 +318,62 @@ export default function DashboardCoursesPage() {
 
       {/* Results Modal */}
       <Dialog open={resultsOpen} onOpenChange={setResultsOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Résultats du test</DialogTitle>
-            <DialogDescription>Analyse et confirmation de niveau</DialogDescription>
+            <DialogTitle>Résultats du test de positionnement</DialogTitle>
+            <DialogDescription>
+              {testResult && (
+                <div className="flex items-center gap-4 mt-2">
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.result === "SUCCESS" 
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                  }`}>
+                    Score: {testResult.score}/10
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.result === "SUCCESS" 
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                      : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                  }`}>
+                    {testResult.result === "SUCCESS" ? "Niveau confirmé" : "Niveau ajusté"}
+                  </div>
+                </div>
+              )}
+            </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg border border-border bg-muted/40 p-4">
-            {resultsSummary ? (
-              <Markdown content={resultsSummary} />
-            ) : (
-              <p className="text-sm text-muted-foreground">Analyse indisponible</p>
-            )}
-          </div>
+          
+          {testResult && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-muted/40 p-4">
+                <h3 className="font-semibold mb-2">Analyse détaillée par question :</h3>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {testResult.review.map((review: any, index: number) => (
+                    <div key={index} className={`p-3 rounded-lg border ${
+                      review.isCorrect 
+                        ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" 
+                        : "bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800"
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        <span className={`text-lg ${review.isCorrect ? "text-green-600" : "text-red-600"}`}>
+                          {review.isCorrect ? "✓" : "✗"}
+                        </span>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm mb-1">Question {index + 1}</p>
+                          <p className="text-sm text-muted-foreground mb-2">{review.question}</p>
+                          <p className="text-xs">
+                            <strong>Votre réponse :</strong> {review.options[review.userAnswer] || "Non répondue"}<br/>
+                            <strong>Bonne réponse :</strong> {review.options[review.correctAnswer]}
+                          </p>
+                          <p className="text-xs mt-1 text-muted-foreground">{review.analysis}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button onClick={() => setResultsOpen(false)}>Fermer</Button>
           </DialogFooter>
