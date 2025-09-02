@@ -26,13 +26,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body>
+      <body className="min-h-screen flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <ClerkAppearanceProvider>
             <ConvexClientProvider>
               <RouteLoader />
               <AppBootstrap />
-              {children}
+              <div className="flex-1">{children}</div>
             </ConvexClientProvider>
             <Toaster />
             <Footer />
