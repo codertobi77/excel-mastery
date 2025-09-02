@@ -48,7 +48,7 @@ export default function TutorPage() {
   
   const conversations = useQuery(
     (api as any).conversations.list,
-    userDoc?._id ? { userId: userDoc._id } : undefined
+    userDoc?._id ? { userId: userDoc._id } : "skip"
   )
 
   const createConversation = useMutation((api as any).conversations.create)
