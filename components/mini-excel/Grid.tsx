@@ -4,6 +4,7 @@ import { evaluateFormula, type CellValue } from "./engine"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import * as Tabs from "@radix-ui/react-tabs"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useUser } from "@clerk/nextjs"
@@ -73,6 +74,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const [dragging, setDragging] = useState(false)
   const [filling, setFilling] = useState(false)
   const tableRef = useRef<HTMLDivElement>(null)
+  const clipboardRef = useRef<HTMLTextAreaElement>(null)
   const [formula, setFormula] = useState<string>("")
 
   // View options
@@ -103,8 +105,12 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
     const el = tableRef.current
     if (!el) return
     const onPaste = async (e: ClipboardEvent) => {
-      if (!e.clipboardData) return
-      const text = e.clipboardData.getData('text/plain')
+      let text = ''
+      if (e.clipboardData) {
+        text = e.clipboardData.getData('text/plain')
+      } else if (typeof navigator !== 'undefined' && (navigator as any).clipboard?.readText) {
+        try { text = await (navigator as any).clipboard.readText() } catch {}
+      }
       if (!text) return
       e.preventDefault()
       const rowsData = text.split(/\r?\n/).filter(Boolean).map((line) => line.split('\t'))
@@ -129,6 +135,48 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
     }
     el.addEventListener('paste', onPaste as any)
     return () => el.removeEventListener('paste', onPaste as any)
+  }, [selRange, active, sheets])
+
+  // Cross-browser keyboard copy/paste normalization
+  useEffect(() => {
+    const onKeyDown = async (e: KeyboardEvent) => {
+      const isCopy = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c'
+      const isPaste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v'
+      if (isCopy) {
+        e.preventDefault()
+        copySelection()
+      } else if (isPaste) {
+        if (typeof navigator !== 'undefined' && (navigator as any).clipboard?.readText) {
+          e.preventDefault()
+          try {
+            const text = await (navigator as any).clipboard.readText()
+            if (text) {
+              const rowsData = text.split(/\r?\n/).filter(Boolean).map((line: string) => line.split('\t'))
+              pushUndo()
+              setSheets((S) => {
+                const copy = [...S]
+                const sh = copy[active]
+                const g = clone2D(sh.grid)
+                for (let i = 0; i < rowsData.length; i++) {
+                  for (let j = 0; j < rowsData[i].length; j++) {
+                    const rr = selRange.r1 + i
+                    const cc = selRange.c1 + j
+                    if (rr < g.length && cc < g[0].length) {
+                      const val = rowsData[i][j]
+                      g[rr][cc] = val.startsWith('=') ? evaluateFormula(val, sh.grid) : (isNaN(parseFloat(val)) ? val : parseFloat(val))
+                    }
+                  }
+                }
+                copy[active] = { ...sh, grid: g }
+                return copy
+              })
+            }
+          } catch {}
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown, { passive: false } as any)
+    return () => window.removeEventListener('keydown', onKeyDown as any)
   }, [selRange, active, sheets])
 
   function pushUndo() {
@@ -252,7 +300,26 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
       for (let c = c1; c <= c2; c++) row.push(String(grid[r][c] ?? ''))
       out.push(row.join('\t'))
     }
-    navigator.clipboard.writeText(out.join('\n')).catch(() => {})
+    const text = out.join('\n')
+    const navAny = typeof navigator !== 'undefined' ? (navigator as any) : undefined
+    if (navAny?.clipboard?.writeText) {
+      navAny.clipboard.writeText(text).catch(() => fallbackCopy(text))
+    } else {
+      fallbackCopy(text)
+    }
+  }
+
+  function fallbackCopy(text: string) {
+    try {
+      if (!clipboardRef.current) return
+      const ta = clipboardRef.current
+      ta.value = text
+      ta.focus()
+      ta.select()
+      document.execCommand('copy')
+      ta.blur()
+      ta.value = ''
+    } catch {}
   }
 
   function normalizeRange(rg: { r1: number; c1: number; r2: number; c2: number }) {
@@ -427,8 +494,20 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const insertColRight = (c: number) => insertCol(c + 1)
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 p-2 border-b bg-muted/40">
+    <div className="border rounded-lg overflow-hidden flex flex-col">
+      {/* Ribbon-like tabs */}
+      <Tabs.Root defaultValue="home">
+        <div className="border-b bg-background">
+          <Tabs.List className="flex items-center gap-1 px-2 h-10">
+            <Tabs.Trigger value="home" className="text-sm px-3 py-1 rounded data-[state=active]:bg-muted">Accueil</Tabs.Trigger>
+            <Tabs.Trigger value="insert" className="text-sm px-3 py-1 rounded data-[state=active]:bg-muted">Insertion</Tabs.Trigger>
+            <Tabs.Trigger value="data" className="text-sm px-3 py-1 rounded data-[state=active]:bg-muted">Données</Tabs.Trigger>
+          </Tabs.List>
+        </div>
+
+        {/* Toolbar: Home */}
+        <Tabs.Content value="home" className="border-b bg-muted/40">
+      <div className="flex flex-wrap items-center gap-2 p-2 h-12">
         <div className="text-xs px-2 py-1 rounded bg-background border">{addr}</div>
         <Input value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="=SUM(A1:B2)" className="flex-1" />
         <Button size="sm" onClick={onCommit}>Entrer</Button>
@@ -491,8 +570,24 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         <div className="mx-2 h-6 w-px bg-border" />
         <Button size="sm" variant="outline" onClick={buildChartFromSelection}>Insérer graphique</Button>
       </div>
+        </Tabs.Content>
 
-      <div className="flex items-center gap-2 p-2 border-b bg-background/60">
+        {/* Toolbar: Insert (placeholder) */}
+        <Tabs.Content value="insert" className="border-b bg-muted/40">
+          <div className="flex flex-wrap items-center gap-2 p-2 h-12">
+            <span className="text-sm text-muted-foreground">Outils d'insertion (à compléter)</span>
+          </div>
+        </Tabs.Content>
+
+        {/* Toolbar: Data (placeholder) */}
+        <Tabs.Content value="data" className="border-b bg-muted/40">
+          <div className="flex flex-wrap items-center gap-2 p-2 h-12">
+            <span className="text-sm text-muted-foreground">Outils de données (à compléter)</span>
+          </div>
+        </Tabs.Content>
+      </Tabs.Root>
+
+      <div className="flex items-center gap-2 p-2 h-12 border-b bg-background/60">
         <div className="flex items-center gap-2">
           <Input className="h-8 w-48" value={sheetName} onChange={(e) => setSheetName(e.target.value)} placeholder="Nom de la feuille" />
           <Button size="sm" onClick={saveCurrentSheet} disabled={!userDoc?._id}>Sauvegarder</Button>
@@ -513,10 +608,12 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         </div>
       </div>
 
-      <div className="overflow-auto" ref={tableRef}
+      <div className="overflow-auto flex-1" ref={tableRef}
         onMouseLeave={() => { if (dragging && !filling) setDragging(false) }}
         onMouseUp={() => { if (filling) { applyFill(); setFilling(false) } }}
       >
+        {/* Hidden textarea for legacy clipboard fallback */}
+        <textarea ref={clipboardRef} aria-hidden="true" tabIndex={-1} style={{ position: 'fixed', left: -9999, top: 0, opacity: 0 }} />
         <table className="min-w-full border-separate border-spacing-0 select-none">
           <thead>
             <tr>
