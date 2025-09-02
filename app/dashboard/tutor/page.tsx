@@ -547,6 +547,7 @@ export default function TutorPage() {
                   disabled={loading || !input.trim() || !userDoc?._id}
                   size="icon"
                   className="h-[44px] w-[44px]"
+                  title={`Debug: loading=${loading}, input="${input.trim()}", userDoc._id=${userDoc?._id}`}
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </Button>
