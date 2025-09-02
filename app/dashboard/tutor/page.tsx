@@ -337,6 +337,7 @@ export default function TutorPage() {
                             setConversationId(c._id)
                             setIsNewConversation(false)
                             setLastConversationId(c._id)
+                            setSidebarOpen(false) // Close sidebar to show conversation content
                           }}
                           className="flex-1 text-left flex items-center gap-2 min-w-0"
                         >

@@ -5,7 +5,9 @@ import { api } from "./_generated/api";
 export const list = query({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
-    return await ctx.db.query("conversations").withIndex("by_user", q => q.eq("userId", userId)).collect();
+    const conversations = await ctx.db.query("conversations").withIndex("by_user", q => q.eq("userId", userId)).collect();
+    // Sort by createdAt descending (newest first)
+    return conversations.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
