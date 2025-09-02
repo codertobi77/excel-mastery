@@ -85,6 +85,54 @@ function enforceCourseStructure(raw: any, topic: string): Course {
   }
 }
 
+export async function generateCourseFromTopic(topic: string) {
+  const fallback: Course = enforceCourseStructure({
+    title: `Introduction à ${topic}`,
+    description: `Un cours pour débutants sur ${topic}`,
+    level: "BEGINNER",
+    duration: 30,
+    chapters: [
+      {
+        title: "Premiers pas",
+        order: 1,
+        lessons: [
+          {
+            title: "Les bases",
+            content: `Découvrez les fondamentaux de ${topic} dans Excel`,
+            duration: 10,
+            order: 1,
+          },
+        ],
+      },
+    ],
+  }, topic)
+
+  try {
+    const system = "Tu es un expert Excel qui crée des cours structurés au format JSON strict, lisibles et complets.";
+    const user = (
+      `Crée un cours sur "${topic}" et retourne UNIQUEMENT un JSON valide avec le schéma suivant:\n` +
+      `{"title": string (titre concis, formulé par l'IA),"description": string (utile, claire),"level": "BEGINNER"|"INTERMEDIATE"|"ADVANCED","duration": number (en minutes pour tout le cours),` +
+      `"chapters": [{"title": string (concis, formulé par l'IA),"order": number,"lessons": [{"title": string (concis, formulé par l'IA),"content": string (explication + exemples),"duration": number (minutes),"order": number}]}]}` +
+      `\nContraintes: (1) Au moins 4 chapitres (chapters.length >= 4). (2) Chaque chapitre contient au minimum 2 leçons. (3) Les titres (cours/chapitres/leçons) doivent être formulés par l'IA (courts, clairs). (4) JSON strict, sans texte supplémentaire.`
+    );
+    const res = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system, messages: [{ role: "user", content: user }], temperature: 0.4, max_tokens: 2000 }),
+    });
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    try {
+      const parsed = JSON.parse(data.content);
+      return enforceCourseStructure(parsed, topic)
+    } catch {
+      return fallback;
+    }
+  } catch {
+    return fallback;
+  }
+}
+
 export async function generateCourse(
   chosenLevel: "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
   testResult: {

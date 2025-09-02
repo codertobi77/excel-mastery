@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { generateCourse, generateExercise, generatePersonalizedContent } from "@/lib/ai-content";
+import { generateCourseFromTopic, generateExercise, generatePersonalizedContent } from "@/lib/ai-content";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         }
       } catch {}
 
-      const courseData = await generateCourse(chosenTopic);
+      const courseData = await generateCourseFromTopic(chosenTopic);
       // Save snapshot
       try {
         await convex.mutation((api as any).courses.saveCourseSnapshot, { userId: effectiveUserId, topic: chosenTopic, dataJson: JSON.stringify(courseData) })

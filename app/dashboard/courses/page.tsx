@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { Progress } from "@/components/ui/progress";
 import Markdown from "@/components/markdown";
-import { generatePlacementTest, correctPlacementTest, generateCourse } from "@/lib/ai-content";
+import { generatePlacementTest, correctPlacementTest, generateCourse, generateCourseFromTopic } from "@/lib/ai-content";
 
 export default function DashboardCoursesPage() {
   const { user } = useUser();
@@ -248,7 +248,7 @@ export default function DashboardCoursesPage() {
                       setTestResult(correctionResult);
                       
                       // Generate summary for display
-                      const summary = `Score: ${correctionResult.score}/10\nRésultat: ${correctionResult.result === "SUCCESS" ? "Réussi" : "Échec"}\n\nAnalyse détaillée:\n${correctionResult.review.map((r, i) => `Question ${i + 1}: ${r.isCorrect ? "✓" : "✗"} - ${r.analysis}`).join('\n\n')}`;
+                      const summary = `Score: ${correctionResult.score}/10\nRésultat: ${correctionResult.result === "SUCCESS" ? "Réussi" : "Échec"}\n\nAnalyse détaillée:\n${correctionResult.review.map((r: any, i: number) => `Question ${i + 1}: ${r.isCorrect ? "✓" : "✗"} - ${r.analysis}`).join('\n\n')}`;
                       setResultsSummary(summary);
                       
                       // Save results to database
