@@ -42,16 +42,20 @@ export default function DashboardCoursesPage() {
   const [testResult, setTestResult] = useState<any>(null);
   const [courseGenerationLoading, setCourseGenerationLoading] = useState(false);
   const hasProgress = useMemo(() => !!progress?._id, [progress]);
+  const isProgressLoaded = useMemo(() => progress !== undefined, [progress]);
 
   const [resumeOpen, setResumeOpen] = useState(false);
   const [resumeCourse, setResumeCourse] = useState<any | null>(null);
 
   useEffect(() => {
-    if (userDoc?._id === undefined) return;
-    if (!hasProgress) {
+    // Only show onboarding if:
+    // 1. User is loaded
+    // 2. Progress query has completed (not undefined)
+    // 3. User has no progress record
+    if (userDoc?._id && isProgressLoaded && !hasProgress) {
       setOnboardingOpen(true);
     }
-  }, [userDoc?._id, hasProgress]);
+  }, [userDoc?._id, isProgressLoaded, hasProgress]);
 
   async function generateOutline() {
     if (!topic.trim()) return;
@@ -78,6 +82,12 @@ export default function DashboardCoursesPage() {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Mes cours</h2>
+      {!isProgressLoaded && userDoc?._id && (
+        <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Vérification de votre profil...</span>
+        </div>
+      )}
       {testLoading && (
         <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />

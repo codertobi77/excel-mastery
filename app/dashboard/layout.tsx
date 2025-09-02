@@ -2,7 +2,7 @@
 import { ReactNode, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { SignedIn, SignedOut, RedirectToSignIn, UserButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useAppStore } from '@/store/app-store'
 import ProfileCompletionModal from '@/components/dashboard/ProfileCompletionModal'
+import { CustomUserButton } from '@/components/custom-user-button'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname?.() || ''
@@ -169,10 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <ThemeToggle />
                 <Button variant="ghost" size="sm" onClick={() => setFeedbackOpen(true)}>Feedback</Button>
-                <UserButton 
-                  afterSignOutUrl="/"
-                  userProfileMode="modal"
-                />
+                <CustomUserButton />
               </div>
             </header>
             <main className="p-6">

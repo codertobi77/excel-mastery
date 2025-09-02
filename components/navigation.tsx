@@ -5,8 +5,9 @@ import { Button } from "./ui/button";
 import { Menu, FileSpreadsheet } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import Link from "next/link";
-import { SignedIn, SignedOut, UserButton, useClerk } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useClerk } from "@clerk/nextjs";
 import { toast } from "sonner";
+import { CustomUserButton } from "./custom-user-button";
 
 export function Navigation() {
   const { openSignIn } = useClerk();
@@ -46,7 +47,7 @@ export function Navigation() {
         <div className="flex items-center space-x-3 ml-8">
           <ThemeToggle />
           <SignedIn>
-            <UserButton afterSignOutUrl="/" userProfileMode="modal" />
+            <CustomUserButton />
           </SignedIn>
           <SignedOut>
             <Button
