@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as Tabs from "@radix-ui/react-tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useUser } from "@clerk/nextjs"
@@ -578,9 +579,9 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
 
         {/* Toolbar: Home */}
         <Tabs.Content value="home" className="border-b bg-muted/40">
-      <div className="flex flex-wrap items-center gap-2 p-2 h-12">
+      <div className="hidden md:flex items-center gap-2 p-2 h-12 overflow-x-auto flex-nowrap whitespace-nowrap">
         <div className="text-xs px-2 py-1 rounded bg-background border">{addr}</div>
-        <Input value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="=SUM(A1:B2)" className="flex-1" />
+        <Input value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="=SUM(A1:B2)" className="flex-1 min-w-[220px]" />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -623,7 +624,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
             </Tooltip>
           </TooltipProvider>
           <Select value={selMeta.format || 'general'} onValueChange={(v) => changeFormat(v as any)}>
-            <SelectTrigger className="w-36 h-8">
+            <SelectTrigger className="w-36 h-8 shrink-0">
               <SelectValue placeholder="Format" />
             </SelectTrigger>
             <SelectContent>
@@ -637,7 +638,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
           <Select value={selMeta.validation?.type || 'none'} onValueChange={(v) => changeValidation(v as any)}>
-            <SelectTrigger className="w-40 h-8">
+            <SelectTrigger className="w-40 h-8 shrink-0">
               <SelectValue placeholder="Validation" />
             </SelectTrigger>
             <SelectContent>
@@ -647,7 +648,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
             </SelectContent>
           </Select>
           {selMeta.validation?.type === 'list' && (
-            <Input placeholder="val1,val2" className="w-40 h-8" onBlur={(e) => changeValidation('list', e.target.value)} />
+            <Input placeholder="val1,val2" className="w-40 h-8 shrink-0" onBlur={(e) => changeValidation('list', e.target.value)} />
           )}
         </div>
         <div className="mx-2 h-6 w-px bg-border" />
@@ -657,9 +658,9 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         </div>
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('asc')}>Trier ↑</Button>
-          <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('desc')}>Trier ↓</Button>
-          <Input value={filterQuery} onChange={(e) => applyFilter(e.target.value)} placeholder={`Filtrer col ${indexToCol(sel.c)}`} className="w-40 h-8" />
+          <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('asc')} className="shrink-0">Trier ↑</Button>
+          <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('desc')} className="shrink-0">Trier ↓</Button>
+          <Input value={filterQuery} onChange={(e) => applyFilter(e.target.value)} placeholder={`Filtrer col ${indexToCol(sel.c)}`} className="w-40 h-8 shrink-0" />
         </div>
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
@@ -667,20 +668,90 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={freezeFirstCol} onChange={(e) => setFreezeFirstCol(e.target.checked)} /> Figer 1ère colonne</label>
         </div>
         <div className="mx-2 h-6 w-px bg-border" />
-        <Button size="sm" variant="outline" onClick={buildChartFromSelection}>Insérer graphique</Button>
+        <Button size="sm" variant="outline" onClick={buildChartFromSelection} className="shrink-0">Insérer graphique</Button>
       </div>
+        </Tabs.Content>
+
+        {/* Compact toolbar for small screens */}
+        <Tabs.Content value="home" className="md:hidden border-b bg-muted/40">
+          <Accordion type="multiple" className="px-2">
+            <AccordionItem value="grp-formule">
+              <AccordionTrigger className="py-2">Formule</AccordionTrigger>
+              <AccordionContent>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs px-2 py-1 rounded bg-background border">{addr}</div>
+                  <Input value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="=SUM(A1:B2)" className="flex-1" />
+                  <Button size="sm" onClick={onCommit}>Entrer</Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="grp-structure">
+              <AccordionTrigger className="py-2">Lignes & Colonnes</AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => insertRow(sel.r)}>+ Ligne (au-dessus)</Button>
+                  <Button size="sm" variant="outline" onClick={() => insertRow(sel.r + 1)}>+ Ligne (au-dessous)</Button>
+                  <Button size="sm" variant="outline" onClick={() => insertCol(sel.c)}>+ Colonne (à gauche)</Button>
+                  <Button size="sm" variant="outline" onClick={() => insertCol(sel.c + 1)}>+ Colonne (à droite)</Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="grp-style">
+              <AccordionTrigger className="py-2">Style & Validation</AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant={selMeta.bold ? 'default' : 'outline'} onClick={() => toggleBold()}><span className="font-bold">B</span></Button>
+                  <Button size="sm" variant={selMeta.italic ? 'default' : 'outline'} onClick={() => toggleItalic()}><span className="italic">I</span></Button>
+                  <Select value={selMeta.format || 'general'} onValueChange={(v) => changeFormat(v as any)}>
+                    <SelectTrigger className="w-36 h-8">
+                      <SelectValue placeholder="Format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">Général</SelectItem>
+                      <SelectItem value="number">Nombre (2 déc.)</SelectItem>
+                      <SelectItem value="currency">Monétaire (€)</SelectItem>
+                      <SelectItem value="percent">Pourcentage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={selMeta.validation?.type || 'none'} onValueChange={(v) => changeValidation(v as any)}>
+                    <SelectTrigger className="w-40 h-8">
+                      <SelectValue placeholder="Validation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Validation: Aucune</SelectItem>
+                      <SelectItem value="number">Validation: Numérique</SelectItem>
+                      <SelectItem value="list">Validation: Liste</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="grp-operations">
+              <AccordionTrigger className="py-2">Opérations</AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={undoAction}>Annuler</Button>
+                  <Button size="sm" variant="outline" onClick={redoAction}>Rétablir</Button>
+                  <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('asc')}>Trier ↑</Button>
+                  <Button size="sm" variant="outline" onClick={() => sortSelectedColumn('desc')}>Trier ↓</Button>
+                  <Input value={filterQuery} onChange={(e) => applyFilter(e.target.value)} placeholder={`Filtrer col ${indexToCol(sel.c)}`} className="w-40 h-8" />
+                  <Button size="sm" variant="outline" onClick={buildChartFromSelection}>Insérer graphique</Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Tabs.Content>
 
         {/* Toolbar: Insert (placeholder) */}
         <Tabs.Content value="insert" className="border-b bg-muted/40">
-          <div className="flex flex-wrap items-center gap-2 p-2 h-12">
+          <div className="flex items-center gap-2 p-2 h-12 overflow-x-auto flex-nowrap whitespace-nowrap">
             <span className="text-sm text-muted-foreground">Outils d'insertion (à compléter)</span>
           </div>
         </Tabs.Content>
 
         {/* Toolbar: Data (placeholder) */}
         <Tabs.Content value="data" className="border-b bg-muted/40">
-          <div className="flex flex-wrap items-center gap-2 p-2 h-12">
+          <div className="flex items-center gap-2 p-2 h-12 overflow-x-auto flex-nowrap whitespace-nowrap">
             <span className="text-sm text-muted-foreground">Outils de données (à compléter)</span>
           </div>
         </Tabs.Content>
