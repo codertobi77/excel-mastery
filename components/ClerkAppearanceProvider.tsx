@@ -2,16 +2,13 @@
 import { useMemo } from 'react'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
+import { useTheme } from 'next-themes'
 
 export default function ClerkAppearanceProvider({ children }: { children: React.ReactNode }) {
-  // Detect app theme via data-theme or class
-  const isDark = useMemo(() => {
-    if (typeof document === 'undefined') return false
-    const html = document.documentElement
-    return html.classList.contains('dark') || html.dataset.theme === 'dark'
-  }, [])
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
 
-  const appearance: any = { baseTheme: isDark ? dark : undefined }
+  const appearance: any = useMemo(() => ({ baseTheme: isDark ? dark : undefined }), [isDark])
 
   return (
     <ClerkProvider appearance={appearance}>
