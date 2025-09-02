@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as Tabs from "@radix-ui/react-tabs"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useUser } from "@clerk/nextjs"
@@ -75,6 +76,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const [filling, setFilling] = useState(false)
   const tableRef = useRef<HTMLDivElement>(null)
   const clipboardRef = useRef<HTMLTextAreaElement>(null)
+  const resizing = useRef<{ col: number; startX: number; startWidth: number } | null>(null)
   const [formula, setFormula] = useState<string>("")
 
   // View options
@@ -96,7 +98,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const selMeta = meta[sel.r]?.[sel.c] || { format: 'general', validation: { type: 'none' } }
 
   useEffect(() => {
-    const onMouseUp = () => { setDragging(false); setFilling(false) }
+    const onMouseUp = () => { setDragging(false); setFilling(false); resizing.current = null }
     window.addEventListener('mouseup', onMouseUp)
     return () => window.removeEventListener('mouseup', onMouseUp)
   }, [])
@@ -136,6 +138,38 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
     el.addEventListener('paste', onPaste as any)
     return () => el.removeEventListener('paste', onPaste as any)
   }, [selRange, active, sheets])
+
+  // Column resizing handlers
+  function startColResize(e: React.MouseEvent, col: number) {
+    e.preventDefault(); e.stopPropagation()
+    const th = (e.currentTarget as HTMLElement).closest('th') as HTMLElement | null
+    const width = th ? th.offsetWidth : 100
+    resizing.current = { col, startX: e.clientX, startWidth: width }
+    window.addEventListener('mousemove', onColResize as any, { passive: false } as any)
+    window.addEventListener('mouseup', stopColResize as any)
+  }
+  function onColResize(ev: MouseEvent) {
+    if (!resizing.current) return
+    ev.preventDefault()
+    const dx = ev.clientX - resizing.current.startX
+    const newWidth = Math.max(60, Math.min(500, resizing.current.startWidth + dx))
+    const colIndex = resizing.current.col
+    const table = tableRef.current?.querySelector('table') as HTMLTableElement | null
+    if (!table) return
+    // Set width on header and all cells in the column
+    const headerCell = table.querySelectorAll('thead th')[colIndex + 1] as HTMLElement | undefined
+    if (headerCell) headerCell.style.width = newWidth + 'px'
+    const bodyRows = table.querySelectorAll('tbody tr')
+    bodyRows.forEach((tr) => {
+      const td = tr.children[colIndex + 1] as HTMLElement | undefined
+      if (td) td.style.width = newWidth + 'px'
+    })
+  }
+  function stopColResize() {
+    window.removeEventListener('mousemove', onColResize as any)
+    window.removeEventListener('mouseup', stopColResize as any)
+    resizing.current = null
+  }
 
   // Cross-browser keyboard copy/paste normalization
   useEffect(() => {
@@ -494,10 +528,10 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const insertColRight = (c: number) => insertCol(c + 1)
 
   return (
-    <div className="border rounded-lg overflow-hidden flex flex-col">
+    <div className="border rounded-lg overflow-hidden flex flex-col shadow-sm">
       {/* Ribbon-like tabs */}
       <Tabs.Root defaultValue="home">
-        <div className="border-b bg-background">
+        <div className="border-b bg-background shadow-sm">
           <Tabs.List className="flex items-center gap-1 px-2 h-10">
             <Tabs.Trigger value="home" className="text-sm px-3 py-1 rounded data-[state=active]:bg-muted">Accueil</Tabs.Trigger>
             <Tabs.Trigger value="insert" className="text-sm px-3 py-1 rounded data-[state=active]:bg-muted">Insertion</Tabs.Trigger>
@@ -510,8 +544,22 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
       <div className="flex flex-wrap items-center gap-2 p-2 h-12">
         <div className="text-xs px-2 py-1 rounded bg-background border">{addr}</div>
         <Input value={formula} onChange={(e) => setFormula(e.target.value)} placeholder="=SUM(A1:B2)" className="flex-1" />
-        <Button size="sm" onClick={onCommit}>Entrer</Button>
-        <Button size="sm" variant="outline" onClick={clearSheet}>Effacer</Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" onClick={onCommit} aria-label="Entrer (Entrée)">Entrer</Button>
+            </TooltipTrigger>
+            <TooltipContent>Entrer (Entrée)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="outline" onClick={clearSheet} aria-label="Effacer la feuille">Effacer</Button>
+            </TooltipTrigger>
+            <TooltipContent>Effacer la feuille</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => insertRow(sel.r)}>+ Ligne (au-dessus)</Button>
@@ -521,8 +569,22 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         </div>
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <Button size="sm" variant={selMeta.bold ? 'default' : 'outline'} onClick={() => toggleBold()}><span className="font-bold">B</span></Button>
-          <Button size="sm" variant={selMeta.italic ? 'default' : 'outline'} onClick={() => toggleItalic()}><span className="italic">I</span></Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" variant={selMeta.bold ? 'default' : 'outline'} onClick={() => toggleBold()} aria-label="Gras (Ctrl+B)"><span className="font-bold">B</span></Button>
+              </TooltipTrigger>
+              <TooltipContent>Gras (Ctrl+B)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" variant={selMeta.italic ? 'default' : 'outline'} onClick={() => toggleItalic()} aria-label="Italique (Ctrl+I)"><span className="italic">I</span></Button>
+              </TooltipTrigger>
+              <TooltipContent>Italique (Ctrl+I)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Select value={selMeta.format || 'general'} onValueChange={(v) => changeFormat(v as any)}>
             <SelectTrigger className="w-36 h-8">
               <SelectValue placeholder="Format" />
@@ -587,7 +649,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
         </Tabs.Content>
       </Tabs.Root>
 
-      <div className="flex items-center gap-2 p-2 h-12 border-b bg-background/60">
+      <div className="flex items-center gap-2 p-2 h-12 border-b bg-background/60 shadow-sm">
         <div className="flex items-center gap-2">
           <Input className="h-8 w-48" value={sheetName} onChange={(e) => setSheetName(e.target.value)} placeholder="Nom de la feuille" />
           <Button size="sm" onClick={saveCurrentSheet} disabled={!userDoc?._id}>Sauvegarder</Button>
@@ -633,6 +695,12 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
                       title="Insérer une colonne à droite"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-1 rounded border"
                     >+D</button>
+                    {/* Column resize handle */}
+                    <span
+                      onMouseDown={(e) => startColResize(e, c)}
+                      className="absolute right-0 top-0 h-full w-1 cursor-col-resize opacity-0 group-hover:opacity-100"
+                      aria-label={`Redimensionner la colonne ${indexToCol(c)}`}
+                    />
                   </div>
                 </th>
               ))}
@@ -667,7 +735,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
                   return (
                     <td
                       key={c}
-                      className={`relative border min-w-[90px] h-8 px-2 text-sm align-middle ${isSel ? 'outline outline-2 outline-primary' : ''} ${inSel ? 'bg-primary/5' : ''} ${invalid}`}
+                      className={`relative border min-w-[90px] h-8 px-2 text-sm align-middle ${isSel ? 'outline outline-2 outline-primary shadow-[0_0_0_2px_rgba(99,102,241,0.3)]' : ''} ${inSel ? 'bg-primary/5' : ''} ${invalid}`}
                       onMouseDown={() => startSelection(r, c)}
                       onMouseEnter={() => extendSelection(r, c)}
                       onClick={() => {
