@@ -23,6 +23,7 @@ export default function DashboardCoursesPage() {
   const upsertLevel = useMutation((api as any).userProgress.upsertLevel);
   const toggleLesson = useMutation((api as any).userProgress.toggleLesson);
   const savePlacementResult = useMutation((api as any).userProgress.savePlacementResult);
+  const upsertUser = useMutation((api as any).users.upsertFromClerk);
 
   const [topic, setTopic] = useState("");
   const [draft, setDraft] = useState("");
@@ -54,18 +55,33 @@ export default function DashboardCoursesPage() {
       isProgressLoaded,
       hasProgress,
       progress,
+      userEmail,
+      user: !!user,
       shouldShowModal: userDoc?._id && isProgressLoaded && !hasProgress
     });
     
+    // If user is loaded but userDoc doesn't exist, create it
+    if (user && userEmail && !userDoc && userDoc !== undefined) {
+      console.log('Creating user in Convex...');
+      upsertUser({
+        email: userEmail,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        image: user.imageUrl || undefined,
+      }).catch(console.error);
+      return; // Let the effect re-run after user creation
+    }
+    
     // Only show onboarding if:
     // 1. User is loaded
-    // 2. Progress query has completed (not undefined)
-    // 3. User has no progress record
-    if (userDoc?._id && isProgressLoaded && !hasProgress) {
+    // 2. UserDoc exists
+    // 3. Progress query has completed (not undefined)
+    // 4. User has no progress record
+    if (user && userDoc?._id && isProgressLoaded && !hasProgress) {
       console.log('Opening onboarding modal');
       setOnboardingOpen(true);
     }
-  }, [userDoc?._id, isProgressLoaded, hasProgress, progress]);
+  }, [user, userDoc, isProgressLoaded, hasProgress, progress, userEmail, upsertUser]);
 
   async function generateOutline() {
     if (!topic.trim()) return;
