@@ -514,7 +514,7 @@ export default function TutorPage() {
               <div className="flex gap-2">
                 <Button 
                   onClick={ask} 
-                  disabled={loading || !userDoc || !input.trim()}
+                  disabled={loading || !input.trim() || !userDoc?._id}
                   size="icon"
                   className="h-[44px] w-[44px]"
                 >
