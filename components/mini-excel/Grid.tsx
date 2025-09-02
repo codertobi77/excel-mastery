@@ -396,7 +396,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
       const g = clone2D(sh.grid)
       const m = clone2D(sh.meta)
       const newRowVals = Array.from({ length: g[0].length }, () => "")
-      const newRowMeta = Array.from({ length: m[0].length }, () => ({ format: 'general', validation: { type: 'none' } as ValidationRule }))
+      const newRowMeta: CellMeta[] = Array.from({ length: m[0].length }, () => ({ format: 'general', validation: { type: 'none' } as ValidationRule } as CellMeta))
       g.splice(at, 0, newRowVals)
       m.splice(at, 0, newRowMeta)
       copy[active] = { ...sh, grid: g, meta: m }
@@ -416,7 +416,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
       const m = clone2D(sh.meta)
       for (let r = 0; r < g.length; r++) {
         g[r].splice(at, 0, "")
-        m[r].splice(at, 0, { format: 'general', validation: { type: 'none' } as ValidationRule })
+        m[r].splice(at, 0, { format: 'general', validation: { type: 'none' } as ValidationRule } as CellMeta)
       }
       copy[active] = { ...sh, grid: g, meta: m }
       return copy
