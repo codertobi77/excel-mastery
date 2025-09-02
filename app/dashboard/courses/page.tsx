@@ -48,14 +48,24 @@ export default function DashboardCoursesPage() {
   const [resumeCourse, setResumeCourse] = useState<any | null>(null);
 
   useEffect(() => {
+    // Debug: log the states
+    console.log('Modal debug:', {
+      userDocId: userDoc?._id,
+      isProgressLoaded,
+      hasProgress,
+      progress,
+      shouldShowModal: userDoc?._id && isProgressLoaded && !hasProgress
+    });
+    
     // Only show onboarding if:
     // 1. User is loaded
     // 2. Progress query has completed (not undefined)
     // 3. User has no progress record
     if (userDoc?._id && isProgressLoaded && !hasProgress) {
+      console.log('Opening onboarding modal');
       setOnboardingOpen(true);
     }
-  }, [userDoc?._id, isProgressLoaded, hasProgress]);
+  }, [userDoc?._id, isProgressLoaded, hasProgress, progress]);
 
   async function generateOutline() {
     if (!topic.trim()) return;
