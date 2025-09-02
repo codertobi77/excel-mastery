@@ -77,6 +77,8 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const tableRef = useRef<HTMLDivElement>(null)
   const clipboardRef = useRef<HTMLTextAreaElement>(null)
   const resizing = useRef<{ col: number; startX: number; startWidth: number } | null>(null)
+  const resizingRow = useRef<{ row: number; startY: number; startHeight: number } | null>(null)
+  const draggingSheet = useRef<{ index: number } | null>(null)
   const [formula, setFormula] = useState<string>("")
 
   // View options
@@ -98,7 +100,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const selMeta = meta[sel.r]?.[sel.c] || { format: 'general', validation: { type: 'none' } }
 
   useEffect(() => {
-    const onMouseUp = () => { setDragging(false); setFilling(false); resizing.current = null }
+    const onMouseUp = () => { setDragging(false); setFilling(false); resizing.current = null; resizingRow.current = null }
     window.addEventListener('mouseup', onMouseUp)
     return () => window.removeEventListener('mouseup', onMouseUp)
   }, [])
@@ -169,6 +171,41 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
     window.removeEventListener('mousemove', onColResize as any)
     window.removeEventListener('mouseup', stopColResize as any)
     resizing.current = null
+  }
+
+  // Row resizing handlers
+  function startRowResize(e: React.MouseEvent, row: number) {
+    e.preventDefault(); e.stopPropagation()
+    const th = (e.currentTarget as HTMLElement).closest('th') as HTMLElement | null
+    const height = th ? th.offsetHeight : 24
+    resizingRow.current = { row, startY: e.clientY, startHeight: height }
+    window.addEventListener('mousemove', onRowResize as any, { passive: false } as any)
+    window.addEventListener('mouseup', stopRowResize as any)
+  }
+  function onRowResize(ev: MouseEvent) {
+    if (!resizingRow.current) return
+    ev.preventDefault()
+    const dy = ev.clientY - resizingRow.current.startY
+    const newHeight = Math.max(20, Math.min(80, resizingRow.current.startHeight + dy))
+    const rowIndex = resizingRow.current.row
+    const table = tableRef.current?.querySelector('table') as HTMLTableElement | null
+    if (!table) return
+    const bodyRow = table.querySelectorAll('tbody tr')[rowIndex] as HTMLElement | undefined
+    if (bodyRow) (bodyRow.style as any).height = newHeight + 'px'
+    const headerRows = table.querySelectorAll('tbody tr')
+    headerRows.forEach((tr, i) => {
+      if (i === rowIndex) {
+        const th = (tr.children[0] as HTMLElement | undefined)
+        if (th) th.style.height = newHeight + 'px'
+        const tds = tr.querySelectorAll('td')
+        tds.forEach((td) => { (td as HTMLElement).style.height = newHeight + 'px' })
+      }
+    })
+  }
+  function stopRowResize() {
+    window.removeEventListener('mousemove', onRowResize as any)
+    window.removeEventListener('mouseup', stopRowResize as any)
+    resizingRow.current = null
   }
 
   // Cross-browser keyboard copy/paste normalization
@@ -528,7 +565,7 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
   const insertColRight = (c: number) => insertCol(c + 1)
 
   return (
-    <div className="border rounded-lg overflow-hidden flex flex-col shadow-sm">
+    <div className="border rounded-lg overflow-hidden flex flex-col shadow-sm max-w-full" style={{ height: 'calc(100vh - 260px)' }}>
       {/* Ribbon-like tabs */}
       <Tabs.Root defaultValue="home">
         <div className="border-b bg-background shadow-sm">
@@ -724,6 +761,12 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
                       title="Insérer une ligne au-dessous"
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-1 rounded border"
                     >+B</button>
+                    {/* Row resize handle */}
+                    <span
+                      onMouseDown={(e) => startRowResize(e, r)}
+                      className="absolute bottom-0 left-0 w-full h-1 cursor-row-resize opacity-0 group-hover:opacity-100"
+                      aria-label={`Redimensionner la ligne ${r + 1}`}
+                    />
                   </div>
                 </th>
                 {row.map((val, c) => {
@@ -782,9 +825,32 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
       )}
       <div className="flex items-center gap-2 border-t p-2 bg-muted/30">
         {sheets.map((sh, i) => (
-          <Button key={i} size="sm" variant={i === active ? 'default' : 'outline'} onClick={() => { setActive(i); setSheetName(sh.name) }}>
+          <button
+            key={i}
+            draggable
+            onDragStart={() => (draggingSheet.current = { index: i })}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              if (!draggingSheet.current) return
+              const from = draggingSheet.current.index
+              const to = i
+              if (from === to) return
+              setSheets((S) => {
+                const copy = [...S]
+                const [moved] = copy.splice(from, 1)
+                copy.splice(to, 0, moved)
+                return copy
+              })
+              setActive(to)
+              draggingSheet.current = null
+            }}
+            onClick={() => { setActive(i); setSheetName(sh.name) }}
+            className={`text-sm px-3 py-1 rounded border ${i === active ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}
+            aria-label={`Feuille ${sh.name}`}
+            title={sh.name}
+          >
             {sh.name}
-          </Button>
+          </button>
         ))}
         <Button size="sm" variant="outline" onClick={addSheet}>+ Nouvelle feuille</Button>
       </div>
