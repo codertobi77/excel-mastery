@@ -55,17 +55,32 @@ export default function TutorPage() {
   const addMessage = useMutation((api as any).messages.add)
   const updateConversation = useMutation((api as any).conversations.update)
   const deleteConversation = useMutation((api as any).conversations.remove)
+  const removeIfEmpty = useMutation((api as any).conversations.removeIfEmpty)
 
+  // Ensure an initial empty conversation exists on first open
   useEffect(() => {
-    if (conversationId || isNewConversation) return
-    if (cachedLastConversationId) {
-      setConversationId(cachedLastConversationId)
-      return
+    if (!userDoc?._id) return
+    if (conversationId) return
+    const run = async () => {
+      // Use last cached conversation if exists
+      if (cachedLastConversationId) {
+        setConversationId(cachedLastConversationId)
+        return
+      }
+      // If user has at least one conversation, pick the first
+      if (conversations && conversations.length > 0) {
+        setConversationId(conversations[0]._id)
+        return
+      }
+      // Otherwise create an initial empty conversation titled "New Chat"
+      const newId = await createConversation({ userId: userDoc._id, title: "New Chat" })
+      setConversationId(newId)
+      setIsNewConversation(true)
+      setLastConversationId(newId || undefined)
+      fetch('/api/conversations', { method: 'POST' }).catch(() => {})
     }
-    if (conversations && conversations.length > 0) {
-      setConversationId(conversations[0]._id)
-    }
-  }, [conversations, conversationId, isNewConversation, cachedLastConversationId])
+    run()
+  }, [userDoc?._id, conversations, conversationId, cachedLastConversationId, createConversation, setLastConversationId])
 
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -160,10 +175,21 @@ export default function TutorPage() {
     }
   }
 
-  const startNewConversation = () => {
-    setConversationId(null)
+  const startNewConversation = async () => {
+    // Remove previous empty conversation if it is empty
+    if (conversationId) {
+      try { await removeIfEmpty({ id: conversationId }) } catch {}
+    }
     setIsNewConversation(true)
     setSidebarOpen(false)
+    if (userDoc?._id) {
+      const newId = await createConversation({ userId: userDoc._id, title: "New Chat" })
+      setConversationId(newId)
+      setLastConversationId(newId || undefined)
+      fetch('/api/conversations', { method: 'POST' }).catch(() => {})
+    } else {
+      setConversationId(null)
+    }
   }
 
   const fillInputWithQuestion = (question: string) => {
@@ -278,7 +304,11 @@ export default function TutorPage() {
                       // Affichage normal de la conversation
                       <div className="flex items-center gap-2 p-3">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
+                            // When switching, remove the previous conversation if it is empty
+                            if (conversationId) {
+                              try { await removeIfEmpty({ id: conversationId }) } catch {}
+                            }
                             setConversationId(c._id)
                             setIsNewConversation(false)
                             setLastConversationId(c._id)

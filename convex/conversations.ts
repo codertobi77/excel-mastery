@@ -35,4 +35,19 @@ export const remove = mutation({
   },
 });
 
+export const removeIfEmpty = mutation({
+  args: { id: v.id("conversations") },
+  handler: async (ctx, { id }) => {
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", id))
+      .collect();
+    if (messages.length === 0) {
+      await ctx.db.delete(id);
+      return true;
+    }
+    return false;
+  },
+});
+
 
