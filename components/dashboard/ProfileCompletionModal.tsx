@@ -36,7 +36,12 @@ export default function ProfileCompletionModal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gender, age: Number(age), nationality }),
       })
-      if (res.ok) setOpen(false)
+      if (res.ok) {
+        setOpen(false)
+        try {
+          window.dispatchEvent(new CustomEvent('PROFILE_COMPLETED'))
+        } catch {}
+      }
     } finally {
       setSubmitting(false)
     }

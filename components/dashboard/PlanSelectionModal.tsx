@@ -24,6 +24,15 @@ export default function PlanSelectionModal() {
     if (profileCompleted) setOpen(true)
   }, [user, profileCompleted])
 
+  // Also react immediately after profile update completes
+  useEffect(() => {
+    const handler = () => {
+      setOpen(true)
+    }
+    window.addEventListener('PROFILE_COMPLETED', handler)
+    return () => window.removeEventListener('PROFILE_COMPLETED', handler)
+  }, [])
+
   async function chooseFree() {
     setOpen(false)
   }

@@ -69,6 +69,14 @@ export default function AppBootstrap() {
         if (data?.plan || data?.credits !== undefined) {
           setUser({ plan: data.plan, credits: data.credits })
         }
+        // If profile is complete and no plan yet, notify plan modal
+        if (data?.plan === 'FREE' || data?.plan === undefined) {
+          const pm: any = (window as any).Clerk?.user?.publicMetadata || {}
+          const isComplete = Boolean(pm?.profileCompleted || (pm?.gender && pm?.age && pm?.nationality))
+          if (isComplete) {
+            try { window.dispatchEvent(new CustomEvent('PROFILE_COMPLETED')) } catch {}
+          }
+        }
         // ask SW to prefetch common endpoints
         if (navigator.serviceWorker?.controller) {
           navigator.serviceWorker.controller.postMessage({
