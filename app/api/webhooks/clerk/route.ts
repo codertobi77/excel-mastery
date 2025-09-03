@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       const firstName = user.first_name || "";
       const lastName = user.last_name || "";
       const image = user.image_url || undefined;
+      const clerkId = (user as any).id as string | undefined;
       console.log("[ClerkWebhook][POST] Upserting user", { email, firstName, lastName, hasImage: Boolean(image) })
 
       await convex.mutation(api.users.upsertFromClerk, {
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
         firstName,
         lastName,
         image,
+        clerkId,
       });
 
       // Sync profile extras on user.updated if present on Clerk
@@ -82,6 +84,11 @@ export async function POST(req: Request) {
             nationality,
           })
         }
+        // If Clerk Billing is enabled, reflect plan from public_metadata.plan or subscriptions
+        const plan = typeof pm.plan === 'string' ? pm.plan.toUpperCase() : undefined
+        if (clerkId && (plan === 'PRO' || plan === 'FREE')) {
+          await convex.mutation((api as any).users.updatePlan, { clerkId, plan })
+        }
       }
       // Best-effort: trigger client notifications through a tag revalidation or queue
       // For now, just log. In production, push to a notification channel.
@@ -89,6 +96,19 @@ export async function POST(req: Request) {
         console.log('[ClerkWebhook] user.created -> toast: Inscription réussie - bienvenue !')
       } else if (evt.type === 'user.updated') {
         console.log('[ClerkWebhook] user.updated -> toast: Profil mis à jour (email ou sécurité)')
+      }
+    }
+
+    // Subscription events (Clerk Billing)
+    if (evt.type?.startsWith('subscription.')) {
+      const sub: any = evt.data
+      const status: string | undefined = sub?.status
+      const userId: string | undefined = (sub?.subscriber as any)?.id
+      if (userId && typeof status === 'string') {
+        const normalized = status.toLowerCase()
+        const isActive = normalized === 'active' || normalized === 'trialing' || normalized === 'past_due'
+        const plan = isActive ? 'PRO' : 'FREE'
+        await convex.mutation((api as any).users.updatePlan, { clerkId: userId, plan })
       }
     }
     console.log("[ClerkWebhook][POST] Completed")

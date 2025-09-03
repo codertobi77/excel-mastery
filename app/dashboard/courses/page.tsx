@@ -24,6 +24,7 @@ export default function DashboardCoursesPage() {
   const toggleLesson = useMutation((api as any).userProgress.toggleLesson);
   const savePlacementResult = useMutation((api as any).userProgress.savePlacementResult);
   const upsertUser = useMutation((api as any).users.upsertFromClerk);
+  const decrementCredits = useMutation((api as any).users.decrementCreditsByClerkId);
 
   const [topic, setTopic] = useState("");
   const [draft, setDraft] = useState("");
@@ -88,6 +89,19 @@ export default function DashboardCoursesPage() {
     setLoading(true);
     setDraft("");
     try {
+      // Gate by plan/credits
+      try {
+        const me = await fetch('/api/me', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+        const plan = me?.plan || 'FREE'
+        const credits = typeof me?.credits === 'number' ? me.credits : 0
+        if (plan !== 'PRO') {
+          if (credits <= 0) {
+            toast.error('Crédits épuisés. Passez au plan Pro pour usage illimité.')
+            return
+          }
+        }
+      } catch {}
+
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -431,6 +445,22 @@ export default function DashboardCoursesPage() {
               if (!topic.trim()) return;
               setCreating(true);
               try {
+                // Gate by plan/credits and decrement for FREE
+                try {
+                  const me = await fetch('/api/me', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+                  const plan = me?.plan || 'FREE'
+                  const credits = typeof me?.credits === 'number' ? me.credits : 0
+                  if (plan !== 'PRO') {
+                    if (credits <= 0) {
+                      toast.error('Crédits épuisés. Passez au plan Pro pour usage illimité.')
+                      return
+                    }
+                    try {
+                      if (user?.id) await decrementCredits({ clerkId: user.id, amount: 1 })
+                    } catch {}
+                  }
+                } catch {}
+
                 const token = await getToken();
                 await fetch("/api/content", {
                   method: "POST",

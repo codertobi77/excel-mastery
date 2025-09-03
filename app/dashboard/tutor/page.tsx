@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { useAppStore } from '@/store/app-store'
 import { MessageSkeleton } from '@/components/placeholders'
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from 'next/navigation'
 
 function makeConciseTitle(raw: string): string {
   let s = (raw || "").replace(/\n+/g, " ").trim()
@@ -33,9 +34,11 @@ function makeConciseTitle(raw: string): string {
 
 export default function TutorPage() {
   const { user } = useUser()
+  const router = useRouter()
   const userEmail = user?.primaryEmailAddress?.emailAddress || ""
   const userDoc = useQuery((api as any).users.getByEmail, userEmail ? { email: userEmail } : undefined)
   const upsertUser = useMutation((api as any).users.upsertFromClerk)
+  const decrementCredits = useMutation((api as any).users.decrementCreditsByClerkId)
 
   const [conversationId, setConversationId] = useState<string | null>(null)
   const cachedLastConversationId = useAppStore((s) => s.lastConversationId)
@@ -116,6 +119,24 @@ export default function TutorPage() {
     if (!input.trim() || !userDoc?._id) return
     setLoading(true)
     try {
+      // Gate by plan/credits for FREE users
+      try {
+        const me = await fetch('/api/me', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+        const plan = me?.plan || 'FREE'
+        const credits = typeof me?.credits === 'number' ? me.credits : 0
+        if (plan !== 'PRO') {
+          if (credits <= 0) {
+            toast.error('Crédits épuisés. Passez au plan Pro pour usage illimité.')
+            router.push('/payments/clerk')
+            setLoading(false)
+            return
+          }
+          try {
+            if (user?.id) await decrementCredits({ clerkId: user.id, amount: 1 })
+          } catch {}
+        }
+      } catch {}
+
       let currentId = conversationId
       
       if (!currentId || isNewConversation) {

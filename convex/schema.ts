@@ -6,6 +6,7 @@ export default defineSchema({
     firstName: v.string(),
     lastName: v.string(),
     email: v.string(),
+    clerkId: v.optional(v.string()),
     emailVerified: v.optional(v.number()), // ms since epoch
     image: v.optional(v.string()),
     password: v.string(),
@@ -13,10 +14,13 @@ export default defineSchema({
     age: v.number(),
     gender: v.string(),
     credits: v.number(),
+    plan: v.optional(v.string()), // FREE | PRO
     level: v.string(), // BEGINNER, INTERMEDIATE, ADVANCED
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_email", ["email"]),
+  })
+    .index("by_email", ["email"]) 
+    .index("by_clerk", ["clerkId"]),
 
   accounts: defineTable({
     userId: v.id("users"),
