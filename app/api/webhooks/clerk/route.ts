@@ -111,6 +111,15 @@ export async function POST(req: Request) {
         await convex.mutation((api as any).users.updatePlan, { clerkId: userId, plan })
       }
     }
+
+    // User deleted: cascade delete user-related data in Convex
+    if (evt.type === 'user.deleted') {
+      const data: any = evt.data
+      const deletedUserId = data?.id as string | undefined
+      if (deletedUserId) {
+        await convex.mutation((api as any).users.deleteUserCascadeByClerkId, { clerkId: deletedUserId })
+      }
+    }
     console.log("[ClerkWebhook][POST] Completed")
     return NextResponse.json({ ok: true });
   } catch (e) {

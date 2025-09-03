@@ -112,3 +112,89 @@ export const decrementCreditsByClerkId = mutation({
   },
 });
 
+export const deleteUserCascadeByClerkId = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, { clerkId }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk", q => q.eq("clerkId", clerkId))
+      .unique();
+    if (!user) return null;
+
+    // Delete sessions
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .collect();
+    for (const s of sessions) await ctx.db.delete(s._id);
+
+    // Delete accounts
+    const accounts = await ctx.db
+      .query("accounts")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .collect();
+    for (const a of accounts) await ctx.db.delete(a._id);
+
+    // Delete conversations and messages
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .collect();
+    for (const c of conversations) {
+      const msgs = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", q => q.eq("conversationId", c._id))
+        .collect();
+      for (const m of msgs) await ctx.db.delete(m._id);
+      await ctx.db.delete(c._id);
+    }
+
+    // Delete progress tree
+    const up = await ctx.db
+      .query("userProgress")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .unique();
+    if (up) {
+      // Best-effort: delete lessonProgress and exerciseProgress referencing this progress
+      const lessonProg = await ctx.db.query("lessonProgress").collect();
+      for (const lp of lessonProg) {
+        if (lp.progressId === up._id) await ctx.db.delete(lp._id);
+      }
+      const exerciseProg = await ctx.db.query("exerciseProgress").collect();
+      for (const ep of exerciseProg) {
+        if (ep.progressId === up._id) await ctx.db.delete(ep._id);
+      }
+      await ctx.db.delete(up._id);
+    }
+
+    // Delete placement tests/results, snapshots, practice sheets
+    const placementTests = await ctx.db
+      .query("placementTests")
+      .withIndex("by_user_level", q => q.eq("userId", user._id))
+      .collect();
+    for (const pt of placementTests) await ctx.db.delete(pt._id);
+
+    const placementResults = await ctx.db
+      .query("placementResults")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .collect();
+    for (const pr of placementResults) await ctx.db.delete(pr._id);
+
+    const snapshots = await ctx.db
+      .query("courseSnapshots")
+      .withIndex("by_user_topic", q => q.eq("userId", user._id))
+      .collect();
+    for (const sn of snapshots) await ctx.db.delete(sn._id);
+
+    const sheets = await ctx.db
+      .query("practiceSheets")
+      .withIndex("by_user", q => q.eq("userId", user._id))
+      .collect();
+    for (const sh of sheets) await ctx.db.delete(sh._id);
+
+    // Finally, delete user
+    await ctx.db.delete(user._id);
+    return "ok";
+  },
+});
+
