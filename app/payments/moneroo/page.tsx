@@ -1,12 +1,22 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { getCurrencyForCountry, PRO_USD_PRICE } from '@/lib/billing'
 import { formatPrice } from '@/lib/currency'
 
+export const dynamic = 'force-dynamic'
+
 export default function MonerooPaymentPage() {
+  return (
+    <Suspense fallback={<div className="max-w-2xl mx-auto py-10 text-center">Chargement…</div>}>
+      <MonerooPaymentInner />
+    </Suspense>
+  )
+}
+
+function MonerooPaymentInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
