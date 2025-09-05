@@ -53,9 +53,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname !== '/dashboard') setLastVisitedRoute(pathname)
   }, [pathname, setLastVisitedRoute])
 
-  // Collapse sidebar on small screens for better mobile experience
+  // Collapse sidebar on small & tablet screens (<1024px) for better experience
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 767px)')
+    const mediaQuery = window.matchMedia('(max-width: 1023px)')
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       const shouldCollapse = 'matches' in e ? e.matches : (e as MediaQueryList).matches
       if (shouldCollapse) {
@@ -91,6 +91,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ? 'bg-primary text-primary-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
       }`}
+      onClick={() => {
+        try {
+          if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+            setSidebarOpen(false)
+            setSidebarOpenCached(false)
+          }
+        } catch {}
+      }}
     >
       <Icon className="w-4 h-4" />
       {label}

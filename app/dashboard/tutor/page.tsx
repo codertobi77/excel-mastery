@@ -43,7 +43,7 @@ export default function TutorPage() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const cachedLastConversationId = useAppStore((s) => s.lastConversationId)
   const setLastConversationId = useAppStore((s) => s.setLastConversationId)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isNewConversation, setIsNewConversation] = useState(false)
   const [editingTitle, setEditingTitle] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
@@ -56,6 +56,23 @@ export default function TutorPage() {
   )
 
   const createConversation = useMutation((api as any).conversations.create)
+  // Ensure sidebar is closed by default on mobile & tablet (<1024px) and closes on resize
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)')
+    const apply = (e: MediaQueryListEvent | MediaQueryList) => {
+      const isNarrow = 'matches' in e ? e.matches : (e as MediaQueryList).matches
+      if (isNarrow) setSidebarOpen(false)
+    }
+    apply(mq)
+    mq.addEventListener?.('change', apply as (ev: Event) => void)
+    // @ts-ignore
+    mq.addListener?.(apply)
+    return () => {
+      mq.removeEventListener?.('change', apply as (ev: Event) => void)
+      // @ts-ignore
+      mq.removeListener?.(apply)
+    }
+  }, [])
   const addMessage = useMutation((api as any).messages.add)
   const updateConversation = useMutation((api as any).conversations.update)
   const deleteConversation = useMutation((api as any).conversations.remove)
