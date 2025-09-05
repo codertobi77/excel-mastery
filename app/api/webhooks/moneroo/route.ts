@@ -58,11 +58,28 @@ async function handlePaymentSuccess(paymentData: any) {
       return
     }
 
-    // Update user plan to PRO
+    // Update user plan to PRO and store interval/trial end if present
+    const interval = paymentData.metadata?.interval === 'year' ? 'PRO_YEAR' : 'PRO_MONTH'
+    const trialDays = Number(paymentData.metadata?.trial_days || 0)
+    let trialEndsAt: number | undefined
+    if (trialDays > 0) {
+      trialEndsAt = Date.now() + trialDays * 24 * 60 * 60 * 1000
+    }
+
     await convex.mutation((api as any).users.updatePlan, {
       clerkId: userId,
       plan: 'PRO',
+      // Extra metadata update handled via a dedicated mutation if needed
     })
+
+    // Optionally call a dedicated mutation to store subscription metadata
+    try {
+      await convex.mutation((api as any).users.updateSubscriptionMeta, {
+        clerkId: userId,
+        interval,
+        trialEndsAt,
+      })
+    } catch {}
 
     console.log('User upgraded to PRO plan:', userId)
   } catch (error) {

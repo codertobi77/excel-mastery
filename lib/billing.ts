@@ -2,8 +2,10 @@
 
 export type Currency = 'USD' | 'EUR' | 'XOF'
 
-// Canonical billing price: charge in USD 49.99
-export const PRO_USD_PRICE = 49.99
+// Canonical billing prices
+export const PRO_USD_MONTHLY = 49.99
+// Annual with 2 months off => 10 * monthly
+export const PRO_USD_ANNUAL = PRO_USD_MONTHLY * 10
 
 // UI-only: pick a currency code to display according to nationality (no conversion applied)
 export const DEFAULT_CURRENCY: Currency = 'USD'

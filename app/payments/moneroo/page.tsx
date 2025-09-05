@@ -3,7 +3,10 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { getCurrencyForCountry, PRO_USD_PRICE } from '@/lib/billing'
+import { getCurrencyForCountry, PRO_USD_MONTHLY, PRO_USD_ANNUAL } from '@/lib/billing'
+import { useUser } from '@clerk/nextjs'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 import { formatPrice } from '@/lib/currency'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +25,11 @@ function MonerooPaymentInner() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fx, setFx] = useState<Record<string, number> | null>(null)
+  const interval = (searchParams.get('interval') || 'month') as 'month' | 'year'
+  const trial = searchParams.get('trial') === 'true'
+  const { user } = useUser()
+  const email = user?.primaryEmailAddress?.emailAddress || ''
+  const userDoc = useQuery((api as any).users.getByEmail, email ? { email } : 'skip')
 
   useEffect(() => {
     // Initialize Moneroo payment when component mounts
@@ -47,9 +55,9 @@ function MonerooPaymentInner() {
     
     try {
       // Determine currency by nationality if available (fallback EUR)
-      const nationality = (searchParams.get('nationality') || '').toUpperCase()
+      const nationality = ((searchParams.get('nationality') || userDoc?.nationality || '') as string).toUpperCase()
       const currency = getCurrencyForCountry(nationality)
-      const amount = PRO_USD_PRICE // canonical USD price for charge
+      const amount = interval === 'year' ? PRO_USD_ANNUAL : PRO_USD_MONTHLY
 
       const response = await fetch('/api/moneroo/initialize', {
         method: 'POST',
@@ -57,7 +65,9 @@ function MonerooPaymentInner() {
         body: JSON.stringify({
           amount,
           currency,
-          description: 'Excel Mastery Pro Plan',
+          description: `Excel Mastery Pro (${interval})${trial ? ' - Free Trial' : ''}`,
+          interval,
+          trialDays: trial ? 14 : 0,
           customerEmail: searchParams.get('email') || '',
           country: nationality,
           displayCurrency: currency,
@@ -85,21 +95,22 @@ function MonerooPaymentInner() {
   }
 
   const displayPrice = useMemo(() => {
-    const nationality = (searchParams.get('nationality') || '').toUpperCase()
+    const nationality = ((searchParams.get('nationality') || userDoc?.nationality || '') as string).toUpperCase()
     const currency = getCurrencyForCountry(nationality)
-    if (!fx) return formatPrice(PRO_USD_PRICE, currency)
+    const base = interval === 'year' ? PRO_USD_ANNUAL : PRO_USD_MONTHLY
+    if (!fx) return formatPrice(base, currency)
     const rate = fx[currency]
-    if (!rate || typeof rate !== 'number') return formatPrice(PRO_USD_PRICE, currency)
-    const converted = PRO_USD_PRICE * rate
+    if (!rate || typeof rate !== 'number') return formatPrice(base, currency)
+    const converted = base * rate
     return formatPrice(converted, currency)
-  }, [fx, searchParams])
+  }, [fx, searchParams, interval, userDoc?.nationality])
 
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto py-10 text-center">
         <h1 className="text-xl font-semibold mb-2">Initialisation du paiement...</h1>
         <p className="text-muted-foreground mb-4">Redirection vers Moneroo en cours...</p>
-        <p className="text-sm text-muted-foreground">Montant: {displayPrice}</p>
+        <p className="text-sm text-muted-foreground">Montant: {displayPrice} {interval === 'year' ? '(annuel - 2 mois offerts)' : '(mensuel)'}</p>
       </div>
     )
   }
@@ -123,7 +134,7 @@ function MonerooPaymentInner() {
     <div className="max-w-2xl mx-auto py-10">
       <h1 className="text-xl font-semibold">Paiement Moneroo</h1>
       <p className="text-muted-foreground mt-2">Redirection en cours...</p>
-      <p className="text-sm text-muted-foreground mt-2">Montant: {displayPrice}</p>
+      <p className="text-sm text-muted-foreground mt-2">Montant: {displayPrice} {interval === 'year' ? '(annuel - 2 mois offerts)' : '(mensuel)'}{trial ? ' • Essai gratuit 14 jours' : ''}</p>
     </div>
   )
 }

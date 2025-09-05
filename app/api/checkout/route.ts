@@ -18,20 +18,10 @@ export async function POST(req: Request) {
     const { country, plan } = (await req.json()) as CheckoutBody
     if (plan !== 'PRO') return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
-    // Determine providers by country
+    // Moneroo-only routing now
     const normalized = (country || '').toUpperCase()
-    const providers: Array<'CLERK' | 'MONEROO'> = []
-    // Example routing: EU -> Clerk card; Africa -> Moneroo; fallback both if available
-    const EU = new Set(['FR','BE','DE','ES','IT','NL','PT','IE','FI','SE','NO','DK','PL','AT','CZ','HU','RO','BG','HR','SI','SK','EE','LV','LT','GR','LU','MT','CY'])
-    const AFRICA = new Set(['CM','SN','CI','GH','NG','KE','ZA','MA','TN','DZ'])
-    if (EU.has(normalized)) providers.push('CLERK')
-    if (AFRICA.has(normalized)) providers.push('MONEROO')
-    if (providers.length === 0) providers.push('CLERK')
-
-    // Create a placeholder checkout session URL(s)
-    // TODO: Integrate real providers. For now, just return routing info.
     return NextResponse.json({
-      providers,
+      providers: ['MONEROO'],
       plan,
       country: normalized,
     })

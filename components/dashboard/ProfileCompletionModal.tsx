@@ -38,9 +38,8 @@ export default function ProfileCompletionModal() {
       })
       if (res.ok) {
         setOpen(false)
-        try {
-          window.dispatchEvent(new CustomEvent('PROFILE_COMPLETED'))
-        } catch {}
+        // Redirect directly to plans selection page
+        window.location.href = '/plans'
       }
     } finally {
       setSubmitting(false)

@@ -15,6 +15,8 @@ export default defineSchema({
     gender: v.string(),
     credits: v.number(),
     plan: v.optional(v.string()), // FREE | PRO
+    subscriptionInterval: v.optional(v.string()), // PRO_MONTH | PRO_YEAR
+    trialEndsAt: v.optional(v.number()), // ms since epoch
     level: v.string(), // BEGINNER, INTERMEDIATE, ADVANCED
     createdAt: v.number(),
     updatedAt: v.number(),

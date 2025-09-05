@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { amount, currency, description, customerEmail, returnUrl, cancelUrl, country, displayCurrency } = body
+    const { amount, currency, description, customerEmail, returnUrl, cancelUrl, country, displayCurrency, interval, trialDays } = body
 
     // Validate required fields
     if (!amount || !currency || !description) {
@@ -34,6 +34,10 @@ export async function POST(req: Request) {
           email: customerEmail,
           country: country,
         },
+        subscription: {
+          interval: interval === 'year' ? 'year' : 'month',
+          trial_days: typeof trialDays === 'number' && trialDays > 0 ? Math.min(30, trialDays) : 0,
+        },
         return_url: returnUrl,
         cancel_url: cancelUrl,
         metadata: {
@@ -42,6 +46,8 @@ export async function POST(req: Request) {
           email: customerEmail,
           country,
           display_currency: displayCurrency,
+          interval: interval === 'year' ? 'year' : 'month',
+          trial_days: typeof trialDays === 'number' && trialDays > 0 ? Math.min(30, trialDays) : 0,
         },
       }),
     })

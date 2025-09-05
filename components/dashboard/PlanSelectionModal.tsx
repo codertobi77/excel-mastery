@@ -48,13 +48,8 @@ export default function PlanSelectionModal() {
       })
       if (!res.ok) throw new Error('Checkout init failed')
       const data = await res.json()
-      const providers: string[] = Array.isArray(data?.providers) ? data.providers : []
-      // Redirect preference: Moneroo first for supported countries, else Clerk
-      if (providers.includes('MONEROO')) {
-        router.push('/payments/moneroo')
-      } else {
-        router.push('/payments/clerk')
-      }
+      // Moneroo-only
+      router.push('/payments/moneroo?interval=month&trial=true')
       setOpen(false)
     } catch (e) {
       // fallback: go to generic subscribe page
@@ -74,8 +69,11 @@ export default function PlanSelectionModal() {
         </div>
         <div className="rounded-lg border p-4">
           <div className="text-sm font-semibold">Pro</div>
-          <div className="text-sm text-muted-foreground mt-1">Accès illimité à tous les services</div>
-          <Button onClick={choosePro} className="mt-3" disabled={busy}>{busy ? 'Redirection...' : 'Passer à Pro'}</Button>
+          <div className="text-sm text-muted-foreground mt-1">Essai gratuit 14 jours • 2 mois offerts/an</div>
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button onClick={choosePro} disabled={busy}>{busy ? 'Redirection...' : 'Mensuel – Essai 14j'}</Button>
+            <Button onClick={() => router.push('/payments/moneroo?interval=year&trial=true')} variant="outline" disabled={busy}>Annuel – 2 mois offerts</Button>
+          </div>
         </div>
       </div>
     )

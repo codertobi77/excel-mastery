@@ -41,6 +41,11 @@ export function CustomUserButton() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          {userDoc && (userDoc.plan !== 'PRO') && (
+            <span className="absolute -left-2 -top-2 text-[10px] bg-muted text-foreground/80 px-1.5 py-0.5 rounded">
+              {userDoc.credits ?? 0}
+            </span>
+          )}
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.imageUrl} alt={user.fullName || ""} />
             <AvatarFallback>

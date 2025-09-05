@@ -27,7 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useAppStore } from '@/store/app-store'
 import ProfileCompletionModal from '@/components/dashboard/ProfileCompletionModal'
-import PlanSelectionModal from '@/components/dashboard/PlanSelectionModal'
+import OnboardingTour from '@/components/OnboardingTour'
 import { CustomUserButton } from '@/components/custom-user-button'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -210,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {children}
             </main>
             <ProfileCompletionModal />
-            <PlanSelectionModal />
+            <OnboardingTour />
           <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>

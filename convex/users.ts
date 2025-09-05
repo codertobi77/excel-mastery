@@ -100,6 +100,23 @@ export const updatePlan = mutation({
   },
 });
 
+export const updateSubscriptionMeta = mutation({
+  args: {
+    clerkId: v.string(),
+    interval: v.optional(v.string()), // PRO_MONTH | PRO_YEAR
+    trialEndsAt: v.optional(v.number()),
+  },
+  handler: async (ctx, { clerkId, interval, trialEndsAt }) => {
+    const user = await ctx.db.query("users").withIndex("by_clerk", q => q.eq("clerkId", clerkId)).unique();
+    if (!user) return null;
+    const patch: any = { updatedAt: Date.now() };
+    if (interval) patch.subscriptionInterval = interval;
+    if (typeof trialEndsAt === 'number') patch.trialEndsAt = trialEndsAt;
+    await ctx.db.patch(user._id, patch);
+    return user._id;
+  },
+});
+
 
 export const decrementCreditsByClerkId = mutation({
   args: { clerkId: v.string(), amount: v.number() },

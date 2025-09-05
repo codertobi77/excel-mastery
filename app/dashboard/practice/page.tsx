@@ -30,7 +30,7 @@ export default function PracticePage() {
         if (plan !== 'PRO') {
           if (credits <= 0) {
             toast.error('Crédits épuisés. Passez au plan Pro pour usage illimité.')
-            router.push('/payments/clerk')
+            router.push('/payments/moneroo?interval=month&trial=true')
             return
           }
           try {
