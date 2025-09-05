@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     // Prepare Moneroo payload
     const monerooPayload: any = {
-      amount: amount * 100, // Convert to cents
+      amount: amount, // Send amount in base currency (dollars)
       currency: currency,
       description: description,
       customer: {
@@ -82,6 +82,11 @@ export async function POST(req: Request) {
       }
     }
 
+    console.log('Amount conversion:', {
+      originalAmount: amount,
+      currency: currency,
+      finalAmount: monerooPayload.amount
+    })
     console.log('Moneroo API payload:', JSON.stringify(monerooPayload, null, 2))
     console.log('Authorization header:', `Bearer ${MONEROO_SECRET_KEY.substring(0, 8)}...`)
 
