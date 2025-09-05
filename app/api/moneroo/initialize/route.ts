@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { sendPaymentInstructions } from '@/lib/email'
 
 export async function POST(req: Request) {
   try {
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
 
     // Prepare Moneroo payload
     const monerooPayload: any = {
-      amount: amount, // Send amount in base currency (dollars)
+      amount: Math.round(amount * 100) / 100, // Ensure proper decimal precision
       currency: currency,
       description: description,
       customer: {
@@ -130,10 +131,38 @@ export async function POST(req: Request) {
     
     console.log('Extracted payment data:', { paymentUrl, paymentId })
     
+    // Send payment instructions email
+    let emailStatus = 'not_sent'
+    try {
+      const emailResult = await sendPaymentInstructions({
+        userEmail: userEmail,
+        userName: `${userFirstName} ${userLastName}`,
+        amount: amount,
+        currency: currency,
+        interval: interval === 'year' ? 'year' : 'month',
+        trialDays: typeof trialDays === 'number' && trialDays > 0 ? trialDays : undefined,
+        paymentId: paymentId || 'unknown',
+        paymentUrl: paymentUrl
+      })
+      
+      if (emailResult.success) {
+        emailStatus = 'sent'
+        console.log('Payment instructions email sent successfully:', emailResult.messageId)
+      } else {
+        emailStatus = 'failed'
+        console.error('Failed to send payment instructions email:', emailResult.error)
+      }
+    } catch (emailError) {
+      emailStatus = 'error'
+      console.error('Email sending error:', emailError)
+      // Don't fail the payment if email fails
+    }
+    
     // Return response with or without payment URL
     const response: any = {
       paymentId: paymentId,
       success: true,
+      emailStatus: emailStatus,
     }
     
     if (paymentUrl) {

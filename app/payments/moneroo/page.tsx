@@ -179,16 +179,16 @@ function MonerooPaymentInner() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
           <h3 className="font-semibold text-blue-900 mb-3">Instructions de paiement</h3>
           <div className="text-sm text-blue-800 space-y-2">
-            <p>• Votre paiement a été initialisé avec Moneroo</p>
-            <p>• Vous recevrez un email avec les instructions de paiement</p>
-            <p>• Les méthodes de paiement disponibles incluent:</p>
+            <p>✅ Votre paiement a été initialisé avec Moneroo</p>
+            <p>📧 Un email avec les instructions détaillées a été envoyé à <strong>{email}</strong></p>
+            <p>💳 Les méthodes de paiement disponibles incluent:</p>
             <ul className="ml-4 space-y-1">
               <li>• Virement bancaire</li>
               <li>• Mobile Money (Orange Money, MTN Money, etc.)</li>
               <li>• Cartes bancaires</li>
               <li>• Cryptomonnaies</li>
             </ul>
-            <p>• Une fois le paiement confirmé, votre compte sera automatiquement mis à jour</p>
+            <p>🔄 Une fois le paiement confirmé, votre compte sera automatiquement mis à jour</p>
           </div>
         </div>
 
