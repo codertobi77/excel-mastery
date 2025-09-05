@@ -3,7 +3,7 @@
 export type Currency = 'USD' | 'EUR' | 'XOF'
 
 // Canonical billing prices
-export const PRO_USD_MONTHLY = 49.99
+export const PRO_USD_MONTHLY = 50
 // Annual with 2 months off => 10 * monthly
 export const PRO_USD_ANNUAL = PRO_USD_MONTHLY * 10
 
