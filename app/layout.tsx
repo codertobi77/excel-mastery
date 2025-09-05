@@ -7,6 +7,7 @@ import ClerkAppearanceProvider from '@/components/ClerkAppearanceProvider'
 import AppBootstrap from '@/components/AppBootstrap'
 import RouteLoader from '@/components/RouteLoader'
 import ConvexClientProvider from '@/components/ConvexClientProvider'
+import ConditionalHeader from '@/components/ConditionalHeader'
 
 export const metadata: Metadata = {
   title: 'Excel Mastery AI - Votre tuteur intelligent pour Excel',
@@ -32,6 +33,7 @@ export default function RootLayout({
             <ConvexClientProvider>
               <RouteLoader />
               <AppBootstrap />
+              <ConditionalHeader />
               <div className="flex-1">{children}</div>
             </ConvexClientProvider>
             <Toaster />
