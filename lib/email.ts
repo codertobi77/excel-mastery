@@ -20,7 +20,7 @@ export async function sendPaymentInstructions(data: PaymentEmailData) {
     }
 
     const emailContent = {
-      from: 'Excel Mastery AI <noreply@excelmastery.ai>',
+      from: 'Excel Mastery AI <onboarding@resend.dev>', // Use Resend's default domain for now
       to: [data.userEmail],
       subject: `Instructions de paiement - Excel Mastery Pro`,
       html: `

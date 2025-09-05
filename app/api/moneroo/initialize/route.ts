@@ -123,11 +123,13 @@ export async function POST(req: Request) {
                       paymentData.url || 
                       paymentData.checkout_url || 
                       paymentData.redirect_url ||
-                      paymentData.link
+                      paymentData.link ||
+                      (paymentData.data && paymentData.data.checkout_url) // Moneroo nested response
     
     const paymentId = paymentData.id || 
                      paymentData.payment_id || 
-                     paymentData.transaction_id
+                     paymentData.transaction_id ||
+                     (paymentData.data && paymentData.data.id) // Moneroo nested response
     
     console.log('Extracted payment data:', { paymentUrl, paymentId })
     
