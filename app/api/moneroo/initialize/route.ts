@@ -3,13 +3,16 @@ import { auth } from '@clerk/nextjs/server'
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth()
+    const { userId, sessionClaims } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
     const { amount, currency, description, customerEmail, returnUrl, cancelUrl, country, displayCurrency, interval, trialDays } = body
+    
+    // Get user email from Clerk session if not provided
+    const userEmail = customerEmail || (sessionClaims?.email as string) || 'user@example.com'
 
-    console.log('Moneroo initialize request:', { amount, currency, description, customerEmail, country, interval, trialDays })
+    console.log('Moneroo initialize request:', { amount, currency, description, customerEmail, userEmail, country, interval, trialDays })
 
     // Validate required fields
     if (!amount || !currency || !description) {
@@ -39,7 +42,9 @@ export async function POST(req: Request) {
       currency: currency,
       description: description,
       customer: {
-        email: customerEmail,
+        email: userEmail,
+        first_name: 'User', // Default first name
+        last_name: 'User', // Default last name
         country: country,
       },
       return_url: returnUrl,
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
       metadata: {
         user_id: userId,
         plan: 'PRO',
-        email: customerEmail,
+        email: userEmail, // Ensure metadata.email is a string
         country,
         display_currency: displayCurrency,
         interval: interval === 'year' ? 'year' : 'month',
