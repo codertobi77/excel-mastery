@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // Prepare Moneroo payload
-    const monerooPayload = {
+    const monerooPayload: any = {
       amount: amount * 100, // Convert to cents
       currency: currency,
       description: description,
