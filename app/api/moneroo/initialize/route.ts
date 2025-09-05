@@ -96,11 +96,42 @@ export async function POST(req: Request) {
     }
 
     const paymentData = await monerooResponse.json()
+    console.log('Moneroo API response:', JSON.stringify(paymentData, null, 2))
     
-    return NextResponse.json({
-      paymentUrl: paymentData.payment_url,
-      paymentId: paymentData.id,
-    })
+    // Check for different possible field names for payment URL
+    const paymentUrl = paymentData.payment_url || 
+                      paymentData.url || 
+                      paymentData.checkout_url || 
+                      paymentData.redirect_url ||
+                      paymentData.link
+    
+    const paymentId = paymentData.id || 
+                     paymentData.payment_id || 
+                     paymentData.transaction_id
+    
+    console.log('Extracted payment data:', { paymentUrl, paymentId })
+    
+    // Return response with or without payment URL
+    const response: any = {
+      paymentId: paymentId,
+      success: true,
+    }
+    
+    if (paymentUrl) {
+      response.paymentUrl = paymentUrl
+      response.requiresRedirect = true
+    } else {
+      response.requiresRedirect = false
+      // If no payment URL, the payment might be processed directly
+      // Check if payment is already completed or requires additional steps
+      if (paymentData.status === 'completed' || paymentData.status === 'success') {
+        response.paymentCompleted = true
+      } else if (paymentData.status === 'pending') {
+        response.paymentPending = true
+      }
+    }
+    
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Moneroo initialization error:', error)
     return NextResponse.json({ 

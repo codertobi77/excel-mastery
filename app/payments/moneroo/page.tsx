@@ -81,12 +81,23 @@ function MonerooPaymentInner() {
       }
 
       const data = await response.json()
+      console.log('Payment initialization response:', data)
       
-      if (data.paymentUrl) {
+      if (data.requiresRedirect && data.paymentUrl) {
         // Redirect to Moneroo payment page
         window.location.href = data.paymentUrl
+      } else if (data.paymentCompleted) {
+        // Payment completed directly, redirect to success page
+        window.location.href = '/dashboard?payment=success'
+      } else if (data.paymentPending) {
+        // Payment is pending, show pending message
+        setError('Payment is being processed. You will be notified once completed.')
+        setLoading(false)
       } else {
-        throw new Error('No payment URL received')
+        // No redirect required, payment might be processed differently
+        console.log('Payment response:', data)
+        setError('Payment processed. Please check your account status.')
+        setLoading(false)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment initialization failed')
