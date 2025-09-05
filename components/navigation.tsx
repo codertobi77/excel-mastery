@@ -7,7 +7,7 @@ import { ThemeToggle } from "./theme-toggle";
 import Link from "next/link";
 import { SignedIn, SignedOut, useClerk } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { CustomUserButton } from "./custom-user-button";
+import { UserButton } from "@clerk/nextjs";
 
 export function Navigation() {
   const { openSignIn } = useClerk();
@@ -47,7 +47,7 @@ export function Navigation() {
         <div className="hidden md:flex items-center space-x-3 ml-8">
           <ThemeToggle />
           <SignedIn>
-            <CustomUserButton />
+            <UserButton />
           </SignedIn>
           <SignedOut>
             <Button
@@ -95,7 +95,7 @@ export function Navigation() {
               <ThemeToggle />
               <div className="flex items-center gap-2">
                 <SignedIn>
-                  <CustomUserButton />
+                  <UserButton />
                 </SignedIn>
                 <SignedOut>
                   <Button

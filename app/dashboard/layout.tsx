@@ -28,7 +28,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { useAppStore } from '@/store/app-store'
 import ProfileCompletionModal from '@/components/dashboard/ProfileCompletionModal'
 import OnboardingTour from '@/components/OnboardingTour'
-import { CustomUserButton } from '@/components/custom-user-button'
+import { UserButton } from '@clerk/nextjs'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname?.() || ''
@@ -203,7 +203,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <ThemeToggle />
                 <Button variant="ghost" size="sm" onClick={() => setFeedbackOpen(true)}>Feedback</Button>
-                <CustomUserButton />
+                <UserButton />
               </div>
             </header>
             <main className="p-4 sm:p-6">

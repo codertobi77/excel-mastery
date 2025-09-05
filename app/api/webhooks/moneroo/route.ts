@@ -39,12 +39,16 @@ export async function POST(req: Request) {
 
     const event = JSON.parse(rawBody)
     console.log('Moneroo webhook received:', {
+      event: event.event,
       type: event.type,
       data: event.data
     })
 
     // Handle different webhook events
-    switch (event.type) {
+    // Moneroo uses "event" field, not "type"
+    const eventType = event.event || event.type
+    switch (eventType) {
+      case 'payment.success':
       case 'payment.succeeded':
         await handlePaymentSuccess(event.data)
         break
@@ -55,7 +59,7 @@ export async function POST(req: Request) {
         await handlePaymentCancellation(event.data)
         break
       default:
-        console.log('Unhandled webhook event type:', event.type)
+        console.log('Unhandled webhook event type:', eventType)
     }
 
     return NextResponse.json({ received: true })

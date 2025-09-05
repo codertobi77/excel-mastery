@@ -12,15 +12,12 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Shield, Bell, Palette, User, MapPin, Calendar, Users } from "lucide-react"
+import { UserProfile } from "@clerk/nextjs"
 
 export default function SettingsPage() {
   const { user } = useUser()
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";
   const userDoc = useQuery((api as any).users.getByEmail, userEmail ? { email: userEmail } : "skip");
-  const [displayName, setDisplayName] = useState(`${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim())
-  const [theme, setTheme] = useState("system")
-  const [emailNotif, setEmailNotif] = useState(true)
-  const [twoFA, setTwoFA] = useState(false)
 
   const getLevelLabel = (level: string) => {
     switch (level) {
@@ -52,33 +49,12 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {/* Compte */}
-      <section className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-        <div className="flex items-center gap-2">
-          <User className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold">Compte</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="display-name">Nom d'affichage</Label>
-            <Input id="display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input value={user?.primaryEmailAddress?.emailAddress ?? ''} disabled />
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <Button disabled>Enregistrer</Button>
-        </div>
-      </section>
-
       {/* Profil détaillé */}
       {userDoc && (
         <section className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold">Profil détaillé</h2>
+            <h2 className="font-semibold">Profil Excel Mastery</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
@@ -94,6 +70,14 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold">{userDoc.credits}</span>
                 <span className="text-sm text-muted-foreground">crédits</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Plan</Label>
+              <div className="flex items-center gap-2">
+                <Badge className={userDoc.plan === 'PRO' ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"}>
+                  {userDoc.plan === 'PRO' ? 'Pro' : 'Gratuit'}
+                </Badge>
               </div>
             </div>
             {userDoc.gender && (
@@ -127,62 +111,25 @@ export default function SettingsPage() {
         </section>
       )}
 
-      {/* Apparence */}
+      {/* Clerk Profile Component */}
       <section className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="flex items-center gap-2">
-          <Palette className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold">Apparence</h2>
+          <User className="w-4 h-4 text-primary" />
+          <h2 className="font-semibold">Gestion du compte</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-2">
-            <Label>Thème</Label>
-            <Select value={theme} onValueChange={setTheme}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choisir un thème" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Clair</SelectItem>
-                <SelectItem value="dark">Sombre</SelectItem>
-                <SelectItem value="system">Système</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <Button disabled>Appliquer</Button>
-        </div>
-      </section>
-
-      {/* Notifications */}
-      <section className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-        <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold">Notifications</h2>
-        </div>
-        <div className="flex items-center justify-between border rounded p-3">
-          <div>
-            <div className="font-medium text-sm sm:text-base">Emails de mise à jour</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">Recevoir des emails sur les nouveautés et astuces</div>
-          </div>
-          <Switch checked={emailNotif} onCheckedChange={setEmailNotif} />
-        </div>
-      </section>
-
-      {/* Sécurité */}
-      <section className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold">Sécurité</h2>
-        </div>
-        <div className="flex items-center justify-between border rounded p-3">
-          <div>
-            <div className="font-medium text-sm sm:text-base">Authentification à deux facteurs</div>
-            <div className="text-xs sm:text-sm text-muted-foreground">Ajoutez une couche de sécurité à votre compte</div>
-          </div>
-          <Switch checked={twoFA} onCheckedChange={setTwoFA} />
-        </div>
-        <div className="flex justify-end">
-          <Button disabled>Gérer via Clerk</Button>
+        <div className="mt-4">
+          <UserProfile 
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "shadow-none border-0",
+                navbar: "hidden",
+                navbarMobileMenuButton: "hidden",
+                headerTitle: "text-lg font-semibold",
+                headerSubtitle: "text-sm text-muted-foreground"
+              }
+            }}
+          />
         </div>
       </section>
     </div>
