@@ -9,14 +9,28 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { amount, currency, description, customerEmail, returnUrl, cancelUrl, country, displayCurrency, interval, trialDays } = body
     
-    // Get user email from Clerk session if not provided
+    // Get user data from Clerk session
     const userEmail = customerEmail || (sessionClaims?.email as string) || 'user@example.com'
+    const userFirstName = (sessionClaims?.given_name as string) || (sessionClaims?.first_name as string) || 'User'
+    const userLastName = (sessionClaims?.family_name as string) || (sessionClaims?.last_name as string) || 'User'
+    
+    console.log('User data from Clerk:', {
+      email: userEmail,
+      firstName: userFirstName,
+      lastName: userLastName,
+      sessionClaims: sessionClaims
+    })
 
     console.log('Moneroo initialize request:', { amount, currency, description, customerEmail, userEmail, country, interval, trialDays })
 
     // Validate required fields
     if (!amount || !currency || !description) {
       return NextResponse.json({ error: 'Missing required fields', received: { amount, currency, description } }, { status: 400 })
+    }
+    
+    // Validate user data
+    if (!userEmail || userEmail === 'user@example.com') {
+      return NextResponse.json({ error: 'User email is required for payment' }, { status: 400 })
     }
 
     // Try different possible environment variable names
@@ -43,8 +57,8 @@ export async function POST(req: Request) {
       description: description,
       customer: {
         email: userEmail,
-        first_name: 'User', // Default first name
-        last_name: 'User', // Default last name
+        first_name: userFirstName,
+        last_name: userLastName,
         country: country,
       },
       return_url: returnUrl,

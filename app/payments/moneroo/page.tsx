@@ -24,6 +24,7 @@ function MonerooPaymentInner() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [paymentData, setPaymentData] = useState<any>(null)
   const [fx, setFx] = useState<Record<string, number> | null>(null)
   const interval = (searchParams.get('interval') || 'month') as 'month' | 'year'
   const trial = searchParams.get('trial') === 'true'
@@ -68,7 +69,7 @@ function MonerooPaymentInner() {
           description: `Excel Mastery Pro (${interval})${trial ? ' - Free Trial' : ''}`,
           interval,
           trialDays: trial ? 14 : 0,
-          customerEmail: searchParams.get('email') || '',
+          customerEmail: searchParams.get('email') || email,
           country: nationality,
           displayCurrency: currency,
           returnUrl: `${window.location.origin}/dashboard?payment=success`,
@@ -89,14 +90,9 @@ function MonerooPaymentInner() {
       } else if (data.paymentCompleted) {
         // Payment completed directly, redirect to success page
         window.location.href = '/dashboard?payment=success'
-      } else if (data.paymentPending) {
-        // Payment is pending, show pending message
-        setError('Payment is being processed. You will be notified once completed.')
-        setLoading(false)
       } else {
-        // No redirect required, payment might be processed differently
-        console.log('Payment response:', data)
-        setError('Payment processed. Please check your account status.')
+        // Payment initiated successfully, show payment instructions
+        setPaymentData(data)
         setLoading(false)
       }
     } catch (err) {
@@ -135,6 +131,73 @@ function MonerooPaymentInner() {
           <Button onClick={initializePayment}>Réessayer</Button>
           <Button variant="outline" onClick={() => router.push('/dashboard')}>
             Retour au tableau de bord
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (paymentData) {
+    return (
+      <div className="max-w-2xl mx-auto py-10">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-semibold mb-2">Paiement initialisé avec succès</h1>
+          <p className="text-muted-foreground">Votre paiement a été préparé. Suivez les instructions ci-dessous pour finaliser votre abonnement.</p>
+        </div>
+
+        <div className="bg-card border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Détails du paiement</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Montant:</span>
+              <span className="font-semibold">{displayPrice}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Période:</span>
+              <span>{interval === 'year' ? 'Annuel (2 mois offerts)' : 'Mensuel'}</span>
+            </div>
+            {trial && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Essai gratuit:</span>
+                <span className="text-green-600 font-semibold">14 jours</span>
+              </div>
+            )}
+            {paymentData.paymentId && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">ID de paiement:</span>
+                <span className="font-mono text-sm">{paymentData.paymentId}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h3 className="font-semibold text-blue-900 mb-3">Instructions de paiement</h3>
+          <div className="text-sm text-blue-800 space-y-2">
+            <p>• Votre paiement a été initialisé avec Moneroo</p>
+            <p>• Vous recevrez un email avec les instructions de paiement</p>
+            <p>• Les méthodes de paiement disponibles incluent:</p>
+            <ul className="ml-4 space-y-1">
+              <li>• Virement bancaire</li>
+              <li>• Mobile Money (Orange Money, MTN Money, etc.)</li>
+              <li>• Cartes bancaires</li>
+              <li>• Cryptomonnaies</li>
+            </ul>
+            <p>• Une fois le paiement confirmé, votre compte sera automatiquement mis à jour</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 justify-center">
+          <Button onClick={() => router.push('/dashboard')} variant="outline">
+            Retour au tableau de bord
+          </Button>
+          <Button onClick={initializePayment}>
+            Nouveau paiement
           </Button>
         </div>
       </div>
