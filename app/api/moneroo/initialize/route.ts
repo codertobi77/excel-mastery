@@ -16,9 +16,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields', received: { amount, currency, description } }, { status: 400 })
     }
 
-    const MONEROO_SECRET_KEY = process.env.MONEROO_SECRET_KEY
+    // Try different possible environment variable names
+    const MONEROO_SECRET_KEY = process.env.MONEROO_SECRET_KEY || 
+                              process.env.MONEROO_API_KEY || 
+                              process.env.MONEROO_KEY
+                              
+    console.log('Moneroo API key check:', {
+      hasSecretKey: !!process.env.MONEROO_SECRET_KEY,
+      hasApiKey: !!process.env.MONEROO_API_KEY,
+      hasKey: !!process.env.MONEROO_KEY,
+      keyLength: MONEROO_SECRET_KEY ? MONEROO_SECRET_KEY.length : 0,
+      keyPrefix: MONEROO_SECRET_KEY ? MONEROO_SECRET_KEY.substring(0, 8) + '...' : 'none'
+    })
+    
     if (!MONEROO_SECRET_KEY) {
-      return NextResponse.json({ error: 'Moneroo not configured' }, { status: 500 })
+      return NextResponse.json({ error: 'Moneroo not configured - no API key found' }, { status: 500 })
     }
 
     // Prepare Moneroo payload
@@ -52,6 +64,7 @@ export async function POST(req: Request) {
     }
 
     console.log('Moneroo API payload:', JSON.stringify(monerooPayload, null, 2))
+    console.log('Authorization header:', `Bearer ${MONEROO_SECRET_KEY.substring(0, 8)}...`)
 
     // Initialize payment with Moneroo API
     const monerooResponse = await fetch('https://api.moneroo.io/v1/payments/initialize', {
