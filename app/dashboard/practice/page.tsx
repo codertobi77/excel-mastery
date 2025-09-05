@@ -59,11 +59,13 @@ export default function PracticePage() {
   }
 
   return (
-    <div>        
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Feuille de calcul</h3>
-        <MiniExcelGrid />
-        <p className="text-xs text-muted-foreground">Astuce: Essayez des formules comme =SUM(A1:B2), =AVERAGE(A1:A5)</p>
+    <div>
+      <div className="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
+        <h3 className="text-base sm:text-lg font-semibold">Feuille de calcul</h3>
+        <div className="rounded-lg overflow-hidden border">
+          <MiniExcelGrid />
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground">Astuce: Essayez des formules comme =SUM(A1:B2), =AVERAGE(A1:A5)</p>
       </div>
     </div>
   )

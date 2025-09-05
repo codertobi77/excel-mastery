@@ -428,8 +428,8 @@ export default function TutorPage() {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6 max-w-5xl mx-auto">
+        <ScrollArea className="flex-1 p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-6 max-w-3xl sm:max-w-4xl lg:max-w-5xl mx-auto">
             {conversationId && !isNewConversation ? (
               <Messages conversationId={conversationId} onFillInput={fillInputWithQuestion} />
             ) : null}
@@ -444,7 +444,7 @@ export default function TutorPage() {
                 </div>
                 <h2 className="text-xl font-semibold mb-2">Nouvelle conversation</h2>
                 <p className="text-muted-foreground mb-6">Commencez par poser une question sur Excel</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 max-w-xl sm:max-w-2xl mx-auto">
                   <button 
                     onClick={() => fillInputWithQuestion("Comment utiliser RECHERCHEV pour fusionner des données ?")}
                     className="w-full text-left hover:bg-muted/80 transition-colors rounded-lg p-3 text-sm text-muted-foreground border border-border hover:border-foreground/20"
@@ -483,7 +483,7 @@ export default function TutorPage() {
                 </div>
                 <h2 className="text-xl font-semibold mb-2">Bienvenue !</h2>
                 <p className="text-muted-foreground mb-6">Commencez votre apprentissage Excel avec l'IA</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 max-w-xl sm:max-w-2xl mx-auto">
                   <button 
                     onClick={() => fillInputWithQuestion("Comment utiliser RECHERCHEV pour fusionner des données ?")}
                     className="w-full text-left hover:bg-muted/80 transition-colors rounded-lg p-3 text-sm text-muted-foreground border border-border hover:border-foreground/20"
@@ -517,13 +517,13 @@ export default function TutorPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex gap-3"
+                className="flex gap-2 sm:gap-3"
               >
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                   <Bot className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <div className="flex-1 max-w-[80%]">
-                  <div className="bg-muted border border-border rounded-xl px-4 py-2 inline-flex items-center gap-2">
+                <div className="flex-1 max-w-[90%] sm:max-w-[80%]">
+                  <div className="bg-muted border border-border rounded-xl px-3 sm:px-4 py-2 inline-flex items-center gap-2">
                     <motion.span
                       className="w-2 h-2 rounded-full bg-muted-foreground/70"
                       animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
@@ -550,13 +550,13 @@ export default function TutorPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="flex gap-3"
+                  className="flex gap-2 sm:gap-3"
                 >
                   <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                     <Bot className="w-5 h-5 text-primary-foreground" />
                   </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="bg-muted rounded-lg p-4">
+                  <div className="flex-1 space-y-2 sm:space-y-3">
+                    <div className="bg-muted rounded-lg p-3 sm:p-4">
                       <Markdown content={streamingReply} />
                       <motion.div
                         className="inline-block w-2 h-4 bg-primary rounded-sm ml-1"

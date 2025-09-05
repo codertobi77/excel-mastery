@@ -14,25 +14,25 @@ export default function HelpPage() {
   const [message, setMessage] = useState("")
 
   return (
-    <div className="p-6 space-y-8">
-      <header className="flex items-center gap-3">
+    <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <header className="flex items-center gap-2 sm:gap-3">
         <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
           <LifeBuoy className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold">Aide</h1>
-          <p className="text-muted-foreground">FAQ, guides et assistance</p>
+          <h1 className="text-xl sm:text-2xl font-semibold">Aide</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">FAQ, guides et assistance</p>
         </div>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* FAQs */}
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-3">
             <BookOpen className="w-4 h-4 text-primary" />
             <h2 className="font-semibold">Questions fréquentes</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {[
               {
                 q: "Comment démarrer avec le Tuteur IA ?",
@@ -60,12 +60,12 @@ export default function HelpPage() {
         </div>
 
         {/* Guides & ressources */}
-        <div className="border rounded-lg p-4">
+        <div className="border rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-3">
             <ExternalLink className="w-4 h-4 text-primary" />
             <h2 className="font-semibold">Guides & ressources</h2>
           </div>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-sm sm:text-base">
             <li>
               <a href="/dashboard/courses" className="text-primary hover:underline">Découvrir les cours disponibles</a>
             </li>
@@ -82,13 +82,13 @@ export default function HelpPage() {
       <Separator />
 
       {/* Contact */}
-      <section className="border rounded-lg p-4">
+      <section className="border rounded-lg p-3 sm:p-4">
         <div className="flex items-center gap-2 mb-3">
           <Mail className="w-4 h-4 text-primary" />
           <h2 className="font-semibold">Contacter le support</h2>
         </div>
         <form
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"
           onSubmit={async (e) => {
             e.preventDefault()
             setSending(true)

@@ -42,19 +42,19 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-16 sm:py-24 bg-secondary/50">
+    <section className="py-12 sm:py-20 bg-secondary/50">
       <div className="container px-4 sm:px-6 lg:px-8 mx-auto">
-        <div className="max-w-2xl mx-auto text-center mb-16">
-          <h2 className="text-base font-semibold leading-7 text-primary">Apprentissage Accéléré</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+        <div className="max-w-2xl mx-auto text-center mb-12 sm:mb-16">
+          <h2 className="text-sm sm:text-base font-semibold leading-7 text-primary">Apprentissage Accéléré</h2>
+          <p className="mt-2 text-2xl sm:text-4xl font-bold tracking-tight">
             Tout ce dont vous avez besoin pour maîtriser Excel
           </p>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-muted-foreground">
             Une plateforme complète qui combine intelligence artificielle et pédagogie pour un apprentissage efficace et personnalisé.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature) => (
             <div
               key={feature.name}

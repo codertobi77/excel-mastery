@@ -429,18 +429,18 @@ export default function DashboardCoursesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="mb-6 p-4 border rounded-md space-y-3">
-        <div className="flex gap-2">
-          <input className="flex-1 border rounded px-3 py-2" placeholder="Sujet de cours (ex: Tableaux croisés dynamiques)" value={topic} onChange={(e) => setTopic(e.target.value)} />
-          <button className="px-4 py-2 rounded bg-primary text-white flex items-center gap-2 disabled:opacity-50" onClick={generateOutline} disabled={loading}>
+      <div className="mb-6 p-3 sm:p-4 border rounded-md space-y-3">
+        <div className="flex gap-2 sm:gap-3 flex-col xs:flex-row">
+          <input className="flex-1 border rounded px-3 py-2 text-sm sm:text-base" placeholder="Sujet de cours (ex: Tableaux croisés dynamiques)" value={topic} onChange={(e) => setTopic(e.target.value)} />
+          <button className="px-3 sm:px-4 py-2 rounded bg-primary text-white flex items-center gap-2 disabled:opacity-50" onClick={generateOutline} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "Génération..." : "Générer un plan"}
           </button>
         </div>
-        {draft && <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded">{draft}</pre>}
-        <div className="flex gap-2">
+        {draft && <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded max-h-60 overflow-y-auto">{draft}</pre>}
+        <div className="flex gap-2 sm:gap-3 flex-col xs:flex-row">
           <button
-            className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-50"
+            className="px-3 sm:px-4 py-2 rounded bg-green-600 text-white disabled:opacity-50"
             onClick={async () => {
               if (!topic.trim()) return;
               setCreating(true);
@@ -489,23 +489,23 @@ export default function DashboardCoursesPage() {
         </div>
       </div>
       {courses ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-6xl mx-auto">
           {courses.map((cp: any) => (
-            <div key={cp.course._id} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-lg">{cp.course.title}</h3>
+            <div key={cp.course._id} className="border rounded-lg p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{cp.course.title}</h3>
                 {cp.percentage === 100 ? (
-                  <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">Badge: Terminé</span>
+                  <span className="text-[10px] sm:text-xs bg-green-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: Terminé</span>
                 ) : cp.percentage >= 50 ? (
-                  <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Badge: En progrès</span>
+                  <span className="text-[10px] sm:text-xs bg-blue-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: En progrès</span>
                 ) : (
-                  <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded">Badge: À commencer</span>
+                  <span className="text-[10px] sm:text-xs bg-gray-500 text-white px-2 py-1 rounded whitespace-nowrap">Badge: À commencer</span>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground mb-3">{cp.course.description}</p>
-              <div className="mb-2 text-sm">{cp.completedLessons}/{cp.totalLessons} leçons</div>
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{cp.course.description}</p>
+              <div className="mb-2 text-xs sm:text-sm">{cp.completedLessons}/{cp.totalLessons} leçons</div>
               <Progress value={cp.percentage} />
-              <div className="mt-3 flex justify-between items-center">
+              <div className="mt-3 flex justify-between items-center gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {

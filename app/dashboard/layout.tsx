@@ -53,6 +53,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname !== '/dashboard') setLastVisitedRoute(pathname)
   }, [pathname, setLastVisitedRoute])
 
+  // Collapse sidebar on small screens for better mobile experience
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)')
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const shouldCollapse = 'matches' in e ? e.matches : (e as MediaQueryList).matches
+      if (shouldCollapse) {
+        setSidebarOpen(false)
+        setSidebarOpenCached(false)
+      }
+    }
+    // Initial check
+    handleChange(mediaQuery)
+    // Listen for changes
+    mediaQuery.addEventListener?.('change', handleChange as (ev: Event) => void)
+    // Fallback for Safari
+    // @ts-ignore
+    mediaQuery.addListener?.(handleChange)
+    return () => {
+      mediaQuery.removeEventListener?.('change', handleChange as (ev: Event) => void)
+      // @ts-ignore
+      mediaQuery.removeListener?.(handleChange)
+    }
+  }, [setSidebarOpenCached])
+
   useEffect(() => {
     if (pathname === '/dashboard' && lastVisitedRoute && lastVisitedRoute !== '/dashboard') {
       router.replace(lastVisitedRoute)
@@ -174,7 +198,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <CustomUserButton />
               </div>
             </header>
-            <main className="p-6">
+            <main className="p-4 sm:p-6">
               {children}
             </main>
             <ProfileCompletionModal />
