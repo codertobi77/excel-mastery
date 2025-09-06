@@ -437,6 +437,54 @@ export default function DashboardCoursesPage() {
             {loading ? "Génération..." : "Générer un plan"}
           </button>
         </div>
+        
+        {/* Section pour passer un test de positionnement */}
+        <div className="border-t pt-3">
+          <h3 className="text-sm font-medium mb-2">Test de positionnement</h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Évaluez votre niveau actuel avec un test personnalisé pour recevoir un cours adapté à vos compétences.
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { key: "BEGINNER", label: "Débutant", color: "bg-green-600 hover:bg-green-700" },
+              { key: "INTERMEDIATE", label: "Intermédiaire", color: "bg-blue-600 hover:bg-blue-700" },
+              { key: "ADVANCED", label: "Avancé", color: "bg-purple-600 hover:bg-purple-700" },
+            ].map((level) => (
+              <button
+                key={level.key}
+                className={`px-3 py-2 rounded text-white text-sm flex items-center gap-2 disabled:opacity-50 ${level.color}`}
+                onClick={async () => {
+                  if (!userDoc?._id) {
+                    toast.error("Veuillez vous connecter pour passer le test");
+                    return;
+                  }
+                  
+                  setTestLoading(true);
+                  setSelectingLevel(level.key);
+                  
+                  try {
+                    // Générer le test de positionnement
+                    const test = await generatePlacementTest(level.key as "BEGINNER" | "INTERMEDIATE" | "ADVANCED");
+                    setTestQuestions(test.questions || []);
+                    setCurrentQuestionIndex(0);
+                    setUserAnswers([]);
+                    setTestOpen(true);
+                    setOnboardingOpen(false);
+                  } catch (error) {
+                    console.error("Erreur lors de la génération du test:", error);
+                    toast.error("Erreur lors de la génération du test");
+                  } finally {
+                    setTestLoading(false);
+                  }
+                }}
+                disabled={testLoading || courseGenerationLoading}
+              >
+                {testLoading && selectingLevel === level.key && <Loader2 className="h-4 w-4 animate-spin" />}
+                Test {level.label}
+              </button>
+            ))}
+          </div>
+        </div>
         {draft && <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded max-h-60 overflow-y-auto">{draft}</pre>}
         <div className="flex gap-2 sm:gap-3 flex-col xs:flex-row">
           <button

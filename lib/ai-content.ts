@@ -226,71 +226,90 @@ export async function generateCourseFromTopic(topic: string) {
   }, topic)
 
   try {
-    const system = "Tu es un expert pédagogue Excel et créateur de contenu e-learning. Tu crées des cours riches, interactifs et explicatifs comme ceux d'OpenClassrooms, avec du contenu multimédia et des explications détaillées.";
-    const user = `Crée un cours complet et riche sur "${topic}" au format JSON. Le contenu doit être aussi explicatif et détaillé que sur OpenClassrooms.
+    const system = "Tu es un expert pédagogue Excel. Tu dois créer un cours détaillé au format JSON strict. IMPORTANT: Réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou après.";
+    const user = `Crée un cours Excel sur "${topic}" avec du contenu très détaillé.
 
-SCHÉMA JSON REQUIS:
+FORMAT JSON EXACT REQUIS:
 {
-  "title": "string (titre engageant et professionnel)",
-  "description": "string (description détaillée des objectifs et bénéfices)",
-  "level": "BEGINNER"|"INTERMEDIATE"|"ADVANCED",
-  "duration": number (durée totale en minutes),
+  "title": "Cours pratique: ${topic}",
+  "description": "Un cours complet pour maîtriser ${topic} dans Excel avec des exemples concrets et des exercices pratiques",
+  "level": "BEGINNER",
+  "duration": 120,
   "chapters": [
     {
-      "title": "string (titre de chapitre clair)",
-      "order": number,
+      "title": "Introduction à ${topic}",
+      "order": 1,
       "lessons": [
         {
-          "title": "string (titre de leçon engageant)",
-          "content": "string (CONTENU TRÈS DÉTAILLÉ avec explications étape par étape, exemples concrets, captures d'écran suggérées, astuces pro, points d'attention, analogies pour faciliter la compréhension. Format Markdown avec titres, listes, code Excel, tableaux. Minimum 500 mots par leçon.)",
-          "mediaElements": [
-            {
-              "type": "image|video|interactive|diagram",
-              "title": "string (titre du média)",
-              "description": "string (description détaillée du contenu visuel)",
-              "placement": "string (où placer dans la leçon)",
-              "altText": "string (texte alternatif descriptif)"
-            }
-          ],
-          "practicalExercise": {
-            "title": "string (titre de l'exercice)",
-            "instructions": "string (consignes détaillées étape par étape)",
-            "expectedResult": "string (résultat attendu)",
-            "tips": ["string (conseils pour réussir)"]
-          },
-          "keyTakeaways": ["string (points clés à retenir)"],
-          "duration": number (minutes),
-          "order": number
+          "title": "Découverte de ${topic}",
+          "content": "# Découverte de ${topic}\n\n## Qu'est-ce que ${topic} ?\n\n${topic} est une fonctionnalité essentielle d'Excel qui permet de...\n\n## Pourquoi utiliser ${topic} ?\n\n- **Gain de temps** : Automatise les tâches répétitives\n- **Précision** : Réduit les erreurs manuelles\n- **Efficacité** : Améliore la productivité\n\n## Cas d'usage concrets\n\n### Exemple 1 : En entreprise\nImaginez que vous devez analyser les ventes mensuelles. Avec ${topic}, vous pouvez...\n\n### Exemple 2 : Gestion personnelle\nPour suivre votre budget familial, ${topic} vous permet de...\n\n## Prérequis\n\nAvant de commencer, assurez-vous de :\n- Avoir Excel installé\n- Connaître les bases d'Excel (cellules, formules simples)\n- Disposer de données d'exemple\n\n## Points clés à retenir\n\n- ${topic} simplifie l'analyse de données\n- La pratique est essentielle pour maîtriser ${topic}\n- Commencez par des exemples simples avant d'aborder des cas complexes",
+          "duration": 20,
+          "order": 1
+        },
+        {
+          "title": "Première utilisation de ${topic}",
+          "content": "# Première utilisation de ${topic}\n\n## Étape par étape\n\n### Étape 1 : Préparation des données\n\n1. **Ouvrez Excel** et créez un nouveau classeur\n2. **Saisissez vos données** dans les colonnes A à D\n3. **Vérifiez la cohérence** de vos données\n\n### Étape 2 : Application de ${topic}\n\n1. **Sélectionnez vos données** (Ctrl+A)\n2. **Accédez au menu** Insertion > ${topic}\n3. **Configurez les paramètres** selon vos besoins\n\n### Étape 3 : Personnalisation\n\n**Options importantes :**\n- Format d'affichage\n- Filtres automatiques\n- Calculs personnalisés\n\n## Exercice pratique\n\n**Objectif :** Créer votre premier ${topic}\n\n**Instructions :**\n1. Téléchargez le fichier d'exemple\n2. Appliquez ${topic} aux données\n3. Personnalisez l'affichage\n4. Sauvegardez votre travail\n\n**Résultat attendu :** Un ${topic} fonctionnel avec vos données\n\n## Astuces de pro\n\n💡 **Astuce 1 :** Utilisez Ctrl+Z pour annuler rapidement\n💡 **Astuce 2 :** Sauvegardez régulièrement votre travail\n💡 **Astuce 3 :** Testez avec des données simples d'abord",
+          "duration": 25,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "title": "Techniques avancées de ${topic}",
+      "order": 2,
+      "lessons": [
+        {
+          "title": "Optimisation de ${topic}",
+          "content": "# Optimisation de ${topic}\n\n## Techniques d'optimisation\n\n### 1. Performance\n\n**Améliorer la vitesse :**\n- Limitez les données inutiles\n- Utilisez des formules efficaces\n- Évitez les calculs complexes\n\n### 2. Lisibilité\n\n**Rendre ${topic} plus clair :**\n- Nommez vos colonnes explicitement\n- Utilisez des couleurs cohérentes\n- Ajoutez des commentaires\n\n### 3. Maintenance\n\n**Faciliter les mises à jour :**\n- Structurez vos données\n- Documentez vos choix\n- Créez des modèles réutilisables\n\n## Cas d'usage avancés\n\n### Analyse financière\nPour analyser la rentabilité par produit...\n\n### Suivi de projet\nPour monitorer l'avancement des tâches...\n\n### Reporting automatisé\nPour générer des rapports mensuels...\n\n## Bonnes pratiques\n\n✅ **À faire :**\n- Tester avec des données réelles\n- Valider les résultats\n- Former les utilisateurs\n\n❌ **À éviter :**\n- Surcharger avec trop d'informations\n- Négliger la documentation\n- Ignorer les retours utilisateurs",
+          "duration": 30,
+          "order": 1
         }
       ]
     }
   ]
 }
 
-EXIGENCES DE CONTENU (style OpenClassrooms):
-• Explications très détaillées avec contexte et justifications
-• Exemples concrets et cas d'usage réels
-• Progression pédagogique logique du simple au complexe
-• Éléments visuels suggérés (captures d'écran, diagrammes, vidéos)
-• Exercices pratiques avec instructions précises
-• Points clés et récapitulatifs
-• Astuces professionnelles et bonnes pratiques
-• Minimum 4 chapitres, 2-3 leçons par chapitre
-• Chaque leçon doit faire minimum 500 mots de contenu riche
-
-Réponds UNIQUEMENT avec le JSON valide, sans texte supplémentaire.`;
+CONTRAINTES STRICTES:
+1. Réponds UNIQUEMENT avec ce JSON, rien d'autre
+2. Remplace "${topic}" par le sujet demandé dans tout le contenu
+3. Le contenu doit être détaillé et pratique
+4. Minimum 300 mots par leçon dans le champ "content"
+5. JSON valide obligatoire`;
     
     const res = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ system, messages: [{ role: "user", content: user }], temperature: 0.3, max_tokens: 4000 }),
     });
-    if (!res.ok) return fallback;
+    if (!res.ok) {
+      console.error('AI API request failed:', res.status, res.statusText);
+      return fallback;
+    }
     const data = await res.json();
+    console.log('AI Response for generateCourseFromTopic:', data.content?.substring(0, 500));
+    
     try {
-      const parsed = JSON.parse(data.content);
+      // Clean the response to extract JSON
+      let jsonContent = data.content;
+      if (typeof jsonContent === 'string') {
+        // Remove any text before the first {
+        const firstBrace = jsonContent.indexOf('{');
+        if (firstBrace > 0) {
+          jsonContent = jsonContent.substring(firstBrace);
+        }
+        // Remove any text after the last }
+        const lastBrace = jsonContent.lastIndexOf('}');
+        if (lastBrace > 0 && lastBrace < jsonContent.length - 1) {
+          jsonContent = jsonContent.substring(0, lastBrace + 1);
+        }
+      }
+      
+      const parsed = JSON.parse(jsonContent);
+      console.log('Successfully parsed JSON for course generation');
       return enforceCourseStructure(parsed, topic)
-    } catch {
+    } catch (error) {
+      console.error('Failed to parse AI response as JSON:', error);
+      console.error('Raw content:', data.content);
       return fallback;
     }
   } catch {
@@ -423,11 +442,32 @@ Génère le parcours personnalisé maintenant :`;
       }),
     });
     
-    if (!res.ok) return fallback;
+    if (!res.ok) {
+      console.error('AI API request failed for personalized course:', res.status, res.statusText);
+      return fallback;
+    }
     const data = await res.json();
+    console.log('AI Response for generateCourse:', data.content?.substring(0, 500));
     
     try {
-      const parsed = JSON.parse(data.content);
+      // Clean the response to extract JSON
+      let jsonContent = data.content;
+      if (typeof jsonContent === 'string') {
+        // Remove any text before the first {
+        const firstBrace = jsonContent.indexOf('{');
+        if (firstBrace > 0) {
+          jsonContent = jsonContent.substring(firstBrace);
+        }
+        // Remove any text after the last }
+        const lastBrace = jsonContent.lastIndexOf('}');
+        if (lastBrace > 0 && lastBrace < jsonContent.length - 1) {
+          jsonContent = jsonContent.substring(0, lastBrace + 1);
+        }
+      }
+      
+      const parsed = JSON.parse(jsonContent);
+      console.log('Successfully parsed JSON for personalized course generation');
+      
       // Convert to the expected Course format
       const course: Course = {
         title: parsed.title || fallback.title,
@@ -447,7 +487,9 @@ Génère le parcours personnalisé maintenant :`;
       };
       
       return enforceCourseStructure(course, "Excel");
-    } catch {
+    } catch (error) {
+      console.error('Failed to parse AI response as JSON for personalized course:', error);
+      console.error('Raw content:', data.content);
       return fallback;
     }
   } catch {
