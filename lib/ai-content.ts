@@ -226,42 +226,51 @@ export async function generateCourseFromTopic(topic: string) {
   }, topic)
 
   try {
-    const system = "Tu es un expert pédagogue Excel. Tu dois créer un cours détaillé au format JSON strict. IMPORTANT: Réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou après.";
-    const user = `Crée un cours Excel sur "${topic}" avec du contenu très détaillé.
+    const system = "Tu es un expert pédagogue Excel dans le style OpenClassrooms. Tu crées du contenu éducatif progressif avec analogies, explications détaillées et exercices pratiques. IMPORTANT: Réponds UNIQUEMENT avec du JSON valide.";
+    const user = `Crée un cours Excel sur "${topic}" dans le style pédagogique OpenClassrooms.
 
-FORMAT JSON EXACT REQUIS:
+STYLE REQUIS (comme OpenClassrooms):
+- Explications progressives avec analogies du quotidien
+- Ton conversationnel et bienveillant 
+- Questions rhétoriques pour engager le lecteur
+- Exemples concrets et pratiques
+- Exercices "À vous de jouer" avec contexte et consignes détaillées
+- Résumés "En résumé" à la fin
+- Émojis pour rendre le contenu vivant 😊
+
+FORMAT JSON EXACT:
 {
-  "title": "Cours pratique: ${topic}",
-  "description": "Un cours complet pour maîtriser ${topic} dans Excel avec des exemples concrets et des exercices pratiques",
+  "title": "Maîtriser ${topic} dans Excel",
+  "description": "Découvrez ${topic} étape par étape avec des explications claires, des analogies du quotidien et des exercices pratiques pour progresser en toute confiance.",
   "level": "BEGINNER",
-  "duration": 120,
+  "duration": 90,
   "chapters": [
     {
-      "title": "Introduction à ${topic}",
+      "title": "Découverte de ${topic}",
       "order": 1,
       "lessons": [
         {
-          "title": "Découverte de ${topic}",
-          "content": "# Découverte de ${topic}\n\n## Qu'est-ce que ${topic} ?\n\n${topic} est une fonctionnalité essentielle d'Excel qui permet de...\n\n## Pourquoi utiliser ${topic} ?\n\n- **Gain de temps** : Automatise les tâches répétitives\n- **Précision** : Réduit les erreurs manuelles\n- **Efficacité** : Améliore la productivité\n\n## Cas d'usage concrets\n\n### Exemple 1 : En entreprise\nImaginez que vous devez analyser les ventes mensuelles. Avec ${topic}, vous pouvez...\n\n### Exemple 2 : Gestion personnelle\nPour suivre votre budget familial, ${topic} vous permet de...\n\n## Prérequis\n\nAvant de commencer, assurez-vous de :\n- Avoir Excel installé\n- Connaître les bases d'Excel (cellules, formules simples)\n- Disposer de données d'exemple\n\n## Points clés à retenir\n\n- ${topic} simplifie l'analyse de données\n- La pratique est essentielle pour maîtriser ${topic}\n- Commencez par des exemples simples avant d'aborder des cas complexes",
+          "title": "Qu'est-ce que ${topic} ?",
+          "content": "# Qu'est-ce que ${topic} ?\n\n## Une analogie pour comprendre\n\nImaginez ${topic} comme [analogie du quotidien]. Tout comme [explication de l'analogie], ${topic} dans Excel vous permet de [bénéfice principal].\n\n## Définition simple\n\n${topic}, c'est [définition claire et accessible]. Prenons l'exemple concret de [exemple du quotidien] : [explication détaillée avec des termes simples].\n\n## Pourquoi c'est utile ?\n\nVous vous demandez peut-être : \"Mais pourquoi aurais-je besoin de ${topic} ?\" 🤔\n\nExcellente question ! ${topic} résout plusieurs problèmes courants :\n\n- **Gain de temps** : Au lieu de [tâche manuelle], vous pouvez [automatisation]\n- **Précision** : Fini les erreurs de calcul, Excel s'en charge\n- **Clarté** : Vos données deviennent plus lisibles et compréhensibles\n\n## Un exemple concret\n\nSupposons que vous gérez le budget familial. Sans ${topic}, vous devriez [processus manuel compliqué]. Avec ${topic}, c'est aussi simple que [processus simplifié] !\n\n## Les bases à connaître\n\nAvant de plonger dans ${topic}, assurez-vous de maîtriser :\n- Les cellules et leur adressage (A1, B2, etc.)\n- La saisie de données de base\n- L'utilisation de la souris et du clavier dans Excel\n\nPas de panique si ce n'est pas encore parfait ! 😌 Nous avancerons étape par étape.",
           "duration": 20,
           "order": 1
         },
         {
-          "title": "Première utilisation de ${topic}",
-          "content": "# Première utilisation de ${topic}\n\n## Étape par étape\n\n### Étape 1 : Préparation des données\n\n1. **Ouvrez Excel** et créez un nouveau classeur\n2. **Saisissez vos données** dans les colonnes A à D\n3. **Vérifiez la cohérence** de vos données\n\n### Étape 2 : Application de ${topic}\n\n1. **Sélectionnez vos données** (Ctrl+A)\n2. **Accédez au menu** Insertion > ${topic}\n3. **Configurez les paramètres** selon vos besoins\n\n### Étape 3 : Personnalisation\n\n**Options importantes :**\n- Format d'affichage\n- Filtres automatiques\n- Calculs personnalisés\n\n## Exercice pratique\n\n**Objectif :** Créer votre premier ${topic}\n\n**Instructions :**\n1. Téléchargez le fichier d'exemple\n2. Appliquez ${topic} aux données\n3. Personnalisez l'affichage\n4. Sauvegardez votre travail\n\n**Résultat attendu :** Un ${topic} fonctionnel avec vos données\n\n## Astuces de pro\n\n💡 **Astuce 1 :** Utilisez Ctrl+Z pour annuler rapidement\n💡 **Astuce 2 :** Sauvegardez régulièrement votre travail\n💡 **Astuce 3 :** Testez avec des données simples d'abord",
+          "title": "Première approche de ${topic}",
+          "content": "# Votre première utilisation de ${topic}\n\n## Préparation : on ne construit pas une maison sans fondations ! 🏗️\n\nTout comme un chef prépare ses ingrédients avant de cuisiner, nous allons préparer nos données avant d'utiliser ${topic}.\n\n### Étape 1 : Organiser vos données\n\n1. **Ouvrez Excel** (vous savez faire, j'en suis sûr ! 😊)\n2. **Créez un nouveau classeur** (Ctrl+N)\n3. **Saisissez des données d'exemple** :\n   - Colonne A : [exemple de données]\n   - Colonne B : [exemple de données]\n   - Colonne C : [exemple de données]\n\n### Étape 2 : Appliquer ${topic}\n\nMaintenant, la partie excitante ! 🎉\n\n1. **Sélectionnez vos données** (cliquez-glissez de A1 à C10 par exemple)\n2. **Trouvez ${topic}** dans le menu [emplacement exact]\n3. **Cliquez et... magie !** ✨\n\nVous voyez ce qui s'est passé ? Excel a automatiquement [résultat de l'action] !\n\n## Comprendre ce qui s'est passé\n\n\"Mais comment Excel a-t-il su quoi faire ?\" vous demandez-vous peut-être. 🤯\n\nC'est simple : Excel analyse vos données et [explication du processus]. C'est comme si vous aviez un assistant personnel qui comprend vos besoins !\n\n## Personnaliser le résultat\n\nLe résultat de base ne vous convient pas parfaitement ? Normal ! Chacun a ses préférences. Voici comment l'adapter :\n\n- **Pour changer [aspect 1]** : [instructions simples]\n- **Pour modifier [aspect 2]** : [instructions simples]\n- **Pour ajuster [aspect 3]** : [instructions simples]\n\n## Vérifier son travail\n\nComme dit le proverbe : \"Deux précautions valent mieux qu'une\" ! Vérifiez toujours :\n✅ Les données sont-elles correctes ?\n✅ Le format vous convient-il ?\n✅ Avez-vous sauvegardé ? (Ctrl+S, toujours !)",
           "duration": 25,
           "order": 2
         }
       ]
     },
     {
-      "title": "Techniques avancées de ${topic}",
+      "title": "Maîtriser ${topic}",
       "order": 2,
       "lessons": [
         {
-          "title": "Optimisation de ${topic}",
-          "content": "# Optimisation de ${topic}\n\n## Techniques d'optimisation\n\n### 1. Performance\n\n**Améliorer la vitesse :**\n- Limitez les données inutiles\n- Utilisez des formules efficaces\n- Évitez les calculs complexes\n\n### 2. Lisibilité\n\n**Rendre ${topic} plus clair :**\n- Nommez vos colonnes explicitement\n- Utilisez des couleurs cohérentes\n- Ajoutez des commentaires\n\n### 3. Maintenance\n\n**Faciliter les mises à jour :**\n- Structurez vos données\n- Documentez vos choix\n- Créez des modèles réutilisables\n\n## Cas d'usage avancés\n\n### Analyse financière\nPour analyser la rentabilité par produit...\n\n### Suivi de projet\nPour monitorer l'avancement des tâches...\n\n### Reporting automatisé\nPour générer des rapports mensuels...\n\n## Bonnes pratiques\n\n✅ **À faire :**\n- Tester avec des données réelles\n- Valider les résultats\n- Former les utilisateurs\n\n❌ **À éviter :**\n- Surcharger avec trop d'informations\n- Négliger la documentation\n- Ignorer les retours utilisateurs",
-          "duration": 30,
+          "title": "Techniques avancées de ${topic}",
+          "content": "# Passez au niveau supérieur avec ${topic} ! 🚀\n\n## Vous êtes prêt pour la suite ?\n\nFélicitations ! Vous maîtrisez maintenant les bases de ${topic}. Mais comme dit l'expression : \"L'appétit vient en mangeant\" ! Découvrons des techniques plus avancées.\n\n## Technique 1 : [Technique avancée]\n\n### Le problème\nVous avez sûrement remarqué que [problème courant]. C'est frustrant, n'est-ce pas ? 😤\n\n### La solution\n[Technique avancée] résout ce problème élégamment. Voici comment :\n\n1. [Étape détaillée 1]\n2. [Étape détaillée 2]\n3. [Étape détaillée 3]\n\n### Exemple concret\nSupposons que [scénario réaliste]. Avec cette technique, vous obtenez [résultat amélioré] en quelques clics !\n\n## Technique 2 : [Autre technique]\n\n### Quand l'utiliser ?\nCette technique est parfaite quand [situation spécifique]. C'est comme avoir [analogie pertinente] !\n\n### Mode d'emploi\n[Instructions détaillées avec captures d'écran suggérées]\n\n## Les pièges à éviter ⚠️\n\nAttention ! Même les experts font parfois ces erreurs :\n\n- **Piège n°1** : [Erreur courante] → Solution : [correction]\n- **Piège n°2** : [Autre erreur] → Solution : [correction]\n- **Piège n°3** : [Troisième erreur] → Solution : [correction]\n\n## Astuces de pro 💡\n\nVoici quelques secrets que les experts utilisent :\n\n1. **Raccourci clavier** : [combinaison] pour [action rapide]\n2. **Astuce de formatage** : [technique] pour [amélioration visuelle]\n3. **Optimisation** : [méthode] pour [gain de performance]\n\n## À vous de jouer ! 🎯\n\n**Contexte :** Vous travaillez dans une entreprise et devez [scénario professionnel réaliste utilisant ${topic}].\n\n**Objectif :** Créer [livrable concret] en utilisant les techniques avancées apprises.\n\n**Consignes :**\n1. [Instruction précise 1]\n2. [Instruction précise 2]\n3. [Instruction précise 3]\n4. [Instruction précise 4]\n\n**Critères de réussite :**\n- [Critère mesurable 1]\n- [Critère mesurable 2]\n- [Critère mesurable 3]\n\n## En résumé\n\n${topic} devient vraiment puissant quand vous maîtrisez :\n- [Point clé 1] pour [bénéfice]\n- [Point clé 2] pour [bénéfice]\n- [Point clé 3] pour [bénéfice]\n\nMaintenant que vous connaissez ces techniques avancées, vous êtes prêt à impressionner vos collègues ! 😎",
+          "duration": 35,
           "order": 1
         }
       ]
@@ -269,12 +278,13 @@ FORMAT JSON EXACT REQUIS:
   ]
 }
 
-CONTRAINTES STRICTES:
-1. Réponds UNIQUEMENT avec ce JSON, rien d'autre
-2. Remplace "${topic}" par le sujet demandé dans tout le contenu
-3. Le contenu doit être détaillé et pratique
-4. Minimum 300 mots par leçon dans le champ "content"
-5. JSON valide obligatoire`;
+CONTRAINTES ABSOLUES:
+1. Réponds SEULEMENT avec le JSON, aucun autre texte
+2. Remplace TOUS les "${topic}" par le sujet exact
+3. Style conversationnel et bienveillant obligatoire
+4. Minimum 500 mots par leçon dans "content"
+5. Inclure émojis, analogies et exercices pratiques
+6. JSON parfaitement valide requis`;
     
     const res = await fetch(AI_ENDPOINT, {
       method: "POST",
