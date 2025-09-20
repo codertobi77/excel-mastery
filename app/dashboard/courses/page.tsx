@@ -12,6 +12,8 @@ import { useUser, useAuth } from "@clerk/nextjs";
 import { Progress } from "@/components/ui/progress";
 import Markdown from "@/components/markdown";
 import { generatePlacementTest, correctPlacementTest, generateCourse, generateCourseFromTopic } from "@/lib/ai-content";
+import { Quiz } from "@/components/course/Quiz";
+import { InteractiveExercise } from "@/components/course/InteractiveExercise";
 
 export default function DashboardCoursesPage() {
   const { user } = useUser();
@@ -48,6 +50,8 @@ export default function DashboardCoursesPage() {
 
   const [resumeOpen, setResumeOpen] = useState(false);
   const [resumeCourse, setResumeCourse] = useState<any | null>(null);
+  const [structuredLesson, setStructuredLesson] = useState<any | null>(null);
+  const [lessonLoading, setLessonLoading] = useState(false);
 
   useEffect(() => {
     // Debug: log the states
@@ -539,33 +543,63 @@ export default function DashboardCoursesPage() {
       {courses ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-6xl mx-auto">
           {courses.map((cp: any) => (
-            <div key={cp.course._id} className="border rounded-lg p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{cp.course.title}</h3>
-                {cp.percentage === 100 ? (
-                  <span className="text-[10px] sm:text-xs bg-green-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: Terminé</span>
-                ) : cp.percentage >= 50 ? (
-                  <span className="text-[10px] sm:text-xs bg-blue-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: En progrès</span>
-                ) : (
-                  <span className="text-[10px] sm:text-xs bg-gray-500 text-white px-2 py-1 rounded whitespace-nowrap">Badge: À commencer</span>
-                )}
+            <div key={cp.course._id} className="border rounded-lg p-3 sm:p-4 flex flex-col">
+              <div className="flex-grow">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <h3 className="font-semibold text-base sm:text-lg line-clamp-2">{cp.course.title}</h3>
+                  {cp.percentage === 100 ? (
+                    <span className="text-[10px] sm:text-xs bg-green-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: Terminé</span>
+                  ) : cp.percentage >= 50 ? (
+                    <span className="text-[10px] sm:text-xs bg-blue-600 text-white px-2 py-1 rounded whitespace-nowrap">Badge: En progrès</span>
+                  ) : (
+                    <span className="text-[10px] sm:text-xs bg-gray-500 text-white px-2 py-1 rounded whitespace-nowrap">Badge: À commencer</span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{cp.course.description}</p>
               </div>
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{cp.course.description}</p>
-              <div className="mb-2 text-xs sm:text-sm">{cp.completedLessons}/{cp.totalLessons} leçons</div>
-              <Progress value={cp.percentage} />
-              <div className="mt-3 flex justify-between items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setResumeCourse(cp);
-                    setResumeOpen(true);
-                  }}
-                >
-                  {cp.percentage === 0 ? 'Commencer' : 'Reprendre'}
-                </Button>
-                <Button variant="secondary" asChild>
-                  <a href={`/dashboard/courses/${cp.course._id}`}>Détails</a>
-                </Button>
+              <div className="flex-shrink-0">
+                <div className="mb-2 text-xs sm:text-sm">{cp.completedLessons}/{cp.totalLessons} leçons</div>
+                <Progress value={cp.percentage} />
+                <div className="mt-3 flex justify-between items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      setResumeCourse(cp);
+                      setResumeOpen(true);
+                      setLessonLoading(true);
+                      setStructuredLesson(null);
+                      try {
+                        // Call the secure proxy route instead of the agent API directly
+                        const res = await fetch("/api/actions/start_lesson", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            lesson_topic: cp.course.title
+                          }),
+                        });
+                        if (!res.ok) {
+                          const errorData = await res.json();
+                          throw new Error(errorData.error || "Failed to fetch lesson");
+                        }
+                        const lessonData = await res.json();
+                        setStructuredLesson(lessonData);
+                      } catch (e: any) {
+                        console.error(e);
+                        toast.error(e.message || "Impossible de charger la leçon. Réessayez.");
+                        setResumeOpen(false);
+                      } finally {
+                        setLessonLoading(false);
+                      }
+                    }}
+                  >
+                    {cp.percentage === 0 ? 'Commencer' : 'Reprendre'}
+                  </Button>
+                  <Button variant="secondary" asChild>
+                    <a href={`/dashboard/courses/${cp.course._id}`}>Détails</a>
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
@@ -574,42 +608,58 @@ export default function DashboardCoursesPage() {
         <CardGridSkeleton />
       )}
 
-      {/* Resume Modal */}
+      {/* Refactored Resume Modal */}
       <Dialog open={resumeOpen} onOpenChange={setResumeOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {resumeCourse?.percentage === 0 ? 'Commencer le cours' : 'Reprendre le cours'} - {resumeCourse?.course.title}
+              {resumeCourse?.course.title}
             </DialogTitle>
             <DialogDescription>
-              {resumeCourse?.nextLesson ? `Prochaine leçon: ${resumeCourse.nextLesson.title}` : 'Cours terminé'}
+              Leçon interactive générée par l'IA
             </DialogDescription>
           </DialogHeader>
-          {resumeCourse?.nextLesson && (
-            <div className="space-y-3">
-              <div className="prose dark:prose-invert">
-                <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded border">{resumeCourse.nextLesson.content}</pre>
-              </div>
+
+          {lessonLoading && (
+            <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="ml-4 text-muted-foreground">Chargement de votre leçon...</p>
             </div>
           )}
+
+          {structuredLesson && !lessonLoading && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Explication</h2>
+                <div className="prose dark:prose-invert max-w-none">
+                  <Markdown content={structuredLesson.content.explanation} />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Exemple</h2>
+                <div className="prose dark:prose-invert max-w-none">
+                   <Markdown content={structuredLesson.content.example} />
+                </div>
+              </div>
+
+              <InteractiveExercise exercise={structuredLesson.content.exercise} />
+
+              <Quiz quiz={structuredLesson.content.mini_quiz} />
+            </div>
+          )}
+
           <DialogFooter>
-            {resumeCourse?.nextLesson ? (
-              <Button
-                onClick={async () => {
-                  try {
-                    await toggleLesson({ userId: userDoc._id, lessonId: resumeCourse.nextLesson._id, completed: true });
-                    toast.success('Leçon marquée comme terminée');
-                    setResumeOpen(false);
-                  } catch (e) {
-                    toast.error("Impossible de marquer la leçon");
-                  }
-                }}
-              >
-                Marquer comme terminée
-              </Button>
-            ) : (
-              <Button onClick={() => setResumeOpen(false)}>Fermer</Button>
-            )}
+            <Button onClick={() => setResumeOpen(false)}>Fermer</Button>
+            <Button
+              onClick={async () => {
+                // Here you would mark the lesson as complete and maybe move to the next one
+                // For now, we just close the modal.
+                toast.success('Prochaine étape: la gamification !');
+                setResumeOpen(false);
+              }}
+            >
+              Leçon Suivante
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

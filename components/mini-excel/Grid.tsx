@@ -50,7 +50,31 @@ function formatValue(value: CellValue, format: CellMeta['format']): string {
 
 function clone2D<T>(arr: T[][]): T[][] { return arr.map((row) => row.slice()) }
 
-export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; cols?: number }) {
+function parseInitialData(initialData: Record<string, string | number> | undefined, rows: number, cols: number): CellValue[][] {
+  const grid: CellValue[][] = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
+  if (!initialData) {
+    return grid;
+  }
+  for (const addr in initialData) {
+    const colMatch = addr.match(/[A-Z]+/);
+    const rowMatch = addr.match(/\d+/);
+    if (colMatch && rowMatch) {
+      let col = 0;
+      for (let i = 0; i < colMatch[0].length; i++) {
+        col = col * 26 + (colMatch[0].charCodeAt(i) - 64);
+      }
+      col -= 1;
+      const row = parseInt(rowMatch[0], 10) - 1;
+
+      if (row >= 0 && row < rows && col >= 0 && col < cols) {
+        grid[row][col] = initialData[addr];
+      }
+    }
+  }
+  return grid;
+}
+
+export default function MiniExcelGrid({ initialData, rows = 20, cols = 10 }: { initialData?: Record<string, string | number>; rows?: number; cols?: number }) {
   const { user } = useUser()
   const userEmail = user?.primaryEmailAddress?.emailAddress || ""
   const userDoc = useQuery((api as any).users.getByEmail, userEmail ? { email: userEmail } : undefined)
@@ -60,9 +84,21 @@ export default function MiniExcelGrid({ rows=10, cols=10 }: { rows?: number; col
 
   // Multi-sheets
   const [sheets, setSheets] = useState<{ name: string; grid: CellValue[][]; meta: CellMeta[][] }[]>([
-    { name: 'Feuille1', grid: Array.from({ length: rows }, () => Array.from({ length: cols }, () => "")), meta: Array.from({ length: rows }, () => Array.from({ length: cols }, () => ({ format: 'general', validation: { type: 'none' } }))) }
+    { name: 'Feuille1', grid: parseInitialData(initialData, rows, cols), meta: Array.from({ length: rows }, () => Array.from({ length: cols }, () => ({ format: 'general', validation: { type: 'none' } }))) }
   ])
   const [active, setActive] = useState(0)
+
+  useEffect(() => {
+    // This effect runs when initialData changes, resetting the grid state.
+    setSheets([
+      { name: 'Feuille1', grid: parseInitialData(initialData, rows, cols), meta: Array.from({ length: rows }, () => Array.from({ length: cols }, () => ({ format: 'general', validation: { type: 'none' } }))) }
+    ]);
+    // Reset undo/redo stacks and selection as well
+    setUndo([]);
+    setRedo([]);
+    setSel({ r: 0, c: 0 });
+    setSelRange({ r1: 0, c1: 0, r2: 0, c2: 0 });
+  }, [initialData, rows, cols]);
 
   // Undo/redo stacks (per sheet)
   const [undo, setUndo] = useState<{ grid: CellValue[][]; meta: CellMeta[][] }[]>([])
