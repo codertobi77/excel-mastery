@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 
 // Create a matcher to identify agent routes that should bypass Clerk's default auth
 const isAgentRoute = createRouteMatcher([
@@ -14,7 +14,7 @@ const clerkAuthMiddleware = clerkMiddleware();
  * It acts as a switch between custom token auth for the Smyth AI agent
  * and Clerk auth for the main web application.
  */
-export default function middleware(req: NextRequest) {
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
   // If the request is for an agent route, apply our custom token authentication.
   if (isAgentRoute(req)) {
     const authHeader = req.headers.get('authorization');
@@ -35,7 +35,7 @@ export default function middleware(req: NextRequest) {
   }
 
   // For all other routes, delegate to the Clerk authentication middleware.
-  return clerkAuthMiddleware(req);
+  return clerkAuthMiddleware(req, event);
 }
 
 export const config = {
